@@ -9,6 +9,7 @@ module AbstractPlutoDingetjes
 
 include_dependency("../Project.toml")
 
+import Pkg
 project_relative_path(xs...) = normpath(joinpath(dirname(dirname(pathof(@__MODULE__))), xs...))
 p = Pkg.TOML.parsefile(project_relative_path("Project.toml"))
 
