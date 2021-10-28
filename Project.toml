@@ -1,5 +1,5 @@
 name = "AbstractPlutoDingetjes"
-uuid = "01723c8e-3830-11ec-16c9-d9f01e26fdcb"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
 authors = ["Paul Berg <paul@plutojl.org>", "Fons van der Plas <fons@plutojl.org>"]
 version = "1.0.0"
 
