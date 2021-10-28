@@ -7,6 +7,13 @@ Take a look at [`PlutoAbstractDingetjes.Bonds`](@ref).
 module AbstractPlutoDingetjes
 
 
+include_dependency("../Project.toml")
+
+project_relative_path(xs...) = normpath(joinpath(dirname(dirname(pathof(@__MODULE__))), xs...))
+p = Pkg.TOML.parsefile(project_relative_path("Project.toml"))
+
+const MY_VERSION = VersionNumber(p["version"])
+
 
 module Bonds
 
