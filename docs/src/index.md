@@ -8,6 +8,6 @@ An abstract package to be implemented by packages/people who create widgets (or 
 
 
 ```@autodocs
-Modules = [AbstractPlutoDingetjes.Bonds]
+Modules = [AbstractPlutoDingetjes, AbstractPlutoDingetjes.Bonds]
 Order   = [:function, :type]
 ```
