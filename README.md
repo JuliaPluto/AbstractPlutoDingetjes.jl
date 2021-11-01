@@ -1,11 +1,12 @@
 # AbstractPlutoDingetjes.jl
 
-An abstract package to be implemented by packages/people who create widgets (or other [*dingetjes*](https://en.wiktionary.org/wiki/dingetjes#Dutch)) for Pluto. If you are just happy using Pluto to make cool stuff, you probably don't want to use this package directly.
-
+An abstract package to be implemented by packages/people who create widgets (or other [*dingetjes*](https://en.wiktionary.org/wiki/dingetjes#Dutch)) for Pluto. If you are just happy using Pluto to make cool stuff, you probably don't want to use this package directly. This package is not *necessary* to create widgets in Pluto, but it can add more advanced functionality to your widgets. See the Interactivity sample notebook inside Pluto's main menu to learn more!
 
 ![](https://media.giphy.com/media/l3vRfDn9ca5PVkHv2/giphy.gif)
 
 ## What is it
+
+> **[FULL DOCUMENTATION HERE](https://docs.juliahub.com/AbstractPlutoDingetjes/UHbnu/)**
 
 ### `Bonds.initial_value`
 The initial value of a bond. In a notebook containing `@bind x my_widget`, this will be used in two cases:

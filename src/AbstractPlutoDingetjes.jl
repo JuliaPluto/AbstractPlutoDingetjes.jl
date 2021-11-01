@@ -40,6 +40,9 @@ Base.get(s::MySlider) = first(s.range)
 
 ```
 
+!!! info "Note about `transform_value`"
+    If you are also using [`transform_value`](@ref) for your widget, then the value returned by `initial_value` should be the value **after** transformation.
+
 
 !!! compat "Pluto TODO"
     This feature only works in Pluto version TODO: NOT RELEASED YET or above.
@@ -77,7 +80,7 @@ transform_value(bond::Any, value_from_javascript::Any) = value_from_javascript
 
 
 
-""
+"`NotGiven()` is the default return value of `possible_values(::Any)`."
 struct NotGiven end
 "Return `InfinitePossibilities()` from your overload of [`possible_values`](@ref) to signify that your bond has no finite set of possible values."
 struct InfinitePossibilities end
@@ -86,7 +89,7 @@ struct InfinitePossibilities end
 """
 The possible values of a bond. This is used when generating precomputed PlutoSliderServer states, see [https://github.com/JuliaPluto/PlutoSliderServer.jl/pull/29](https://github.com/JuliaPluto/PlutoSliderServer.jl/pull/29). Not relevant outside of this use (for now...).
 
-The returned value should be an iterable object that you can call `length` on (like a `Vector` or a `Generator` without filter) or return [`PlutoAbstractDingetjes.Bonds.InfinitePossibilities()`](@ref) if this set is inifinite.
+The returned value should be an iterable object that you can call `length` on (like a `Vector` or a `Generator` without filter) or return [`InfinitePossibilities()`](@ref) if this set is inifinite.
 
 # Examples
 ```julia
@@ -107,6 +110,8 @@ Base.show(io::IO, m::MIME"text/html", s::MyTextBox) = show(io, m, HTML("<input t
 PlutoAbstractDingetjes.Bonds.possible_values(s::MySlider) = PlutoAbstractDingetjes.Bonds.InfinitePossibilities()
 ```
 
+!!! info "Note about `transform_value`"
+    If you are also using [`transform_value`](@ref) for your widget, then the values returned by `possible_values` should be the values **after** transformation.
 
 !!! compat "Pluto TODO"
     This feature only works in Pluto version TODO: NOT RELEASED YET or above.
@@ -133,6 +138,8 @@ Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input ty
 PlutoAbstractDingetjes.Bonds.validate_value(s::MySlider, x::Any) = x isa Real && first(s.range) <= x <= last(s.range)
 ```
 
+!!! info "Note about `transform_value`"
+    If you are also using [`transform_value`](@ref) for your widget, then the value validated by `validate_value` will be the value **before** transformation.
 
 !!! warning
     Be sure to add a dispatch for `validate_value(s::MyWidget, x::Any)`, not just for `validate_value(s::MyWidget, x::ExpectedType)`, since this would return the fallback value `true` when `x` is not of the expected type.
