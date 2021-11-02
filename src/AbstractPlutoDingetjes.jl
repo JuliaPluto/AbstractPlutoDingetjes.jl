@@ -53,7 +53,7 @@ end
 
 See also: [`is_inside_pluto`](@ref).
 """
-is_supported_by_display(io::IO, x::Union{Module,Function,Type}) = if !_loaded_ref[]
+is_supported_by_display(io::IO, x::Any) = if !_loaded_ref[]
     error("`is_supported_by_display` can only be called inside a function, **after** your package has been imported. You can not call the function at top-level.")
 else
     features = get(io, :pluto_supported_integration_features, [])
@@ -108,7 +108,7 @@ Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input ty
 
 PlutoAbstractDingetjes.Bonds.initial_value(s::MySlider) = first(s.range)
 
-# Add the following for the same functionality on Pluto versions TODO and below. Will be ignored in newer Pluto versions. See the compat info below.
+# Add the following for the same functionality on Pluto versions TODO and below. Will be ignored in future Pluto versions. See the compat info below.
 Base.get(s::MySlider) = first(s.range)
 
 ```
@@ -118,9 +118,11 @@ Base.get(s::MySlider) = first(s.range)
 
 
 !!! compat "Pluto TODO"
-    This feature only works in Pluto version TODO: NOT RELEASED YET or above.
+    This feature only works in Pluto version TODO: NOT RELEASED YET or above. 
     
     Older versions of Pluto used a `Base.get` overload for this (to avoid the need for the `AbstractPlutoDingetjes` package, but we changed our minds 💕). To support all versions of Pluto, use both methods of declaring the initial value.
+    
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 
 """
 initial_value(bond::Any) = missing
@@ -146,6 +148,8 @@ PlutoAbstractDingetjes.Bonds.transform_value(s::MySlider, value_from_javascript:
 
 !!! compat "Pluto TODO"
     This feature only works in Pluto version TODO: NOT RELEASED YET or above. Values are not transformed in older versions.
+    
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 
 """
 transform_value(bond::Any, value_from_javascript::Any) = value_from_javascript
