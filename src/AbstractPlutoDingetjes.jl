@@ -90,6 +90,7 @@ end
 
 
 module Bonds
+import ..AbstractPlutoDingetjes
 
 """
 The initial value of a bond. In a notebook containing `@bind x my_widget`, this will be used in two cases:
