@@ -4,10 +4,16 @@ An abstract package to be implemented by packages/people who create widgets (or 
 
 ![](https://media.giphy.com/media/l3vRfDn9ca5PVkHv2/giphy.gif)
 
-## Docstrings
-
+# Bonds
 
 ```@autodocs
 Modules = [AbstractPlutoDingetjes.Bonds]
+Order   = [:function, :type]
+```
+
+# Extras
+
+```@autodocs
+Modules = [AbstractPlutoDingetjes]
 Order   = [:function, :type]
 ```
