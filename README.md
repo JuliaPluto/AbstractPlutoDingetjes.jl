@@ -21,7 +21,7 @@ struct MySlider
     range::AbstractRange{<:Real}
 end
 
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
+Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=$(first(s.values)) step=$(step(s.values)) max=$(last(s.values))>"))
 
 PlutoAbstractDingetjes.Bonds.initial_value(s::MySlider) = first(s.range)
 
@@ -41,53 +41,12 @@ struct MyVectorSlider
     values::Vector{<:Any} # note! a vector of arbitrary objects, not just numbers
 end
 
-Base.show(io::IO, m::MIME"text/html", s::MyVectorSlider) = show(io, m, HTML("<input type=range min=1 max=\$(length(s.values))>"))
+Base.show(io::IO, m::MIME"text/html", s::MyVectorSlider) = show(io, m, HTML("<input type=range min=1 max=$(length(s.values))>"))
 
 PlutoAbstractDingetjes.Bonds.transform_value(s::MySlider, value_from_javascript::Int) = s.values[value_from_javascript]
 ```
 
 See https://github.com/JuliaPluto/PlutoUI.jl/issues/3#issuecomment-629724036
 
-### `Bonds.possible_values`
-The possible values of a bond. This is used when generating precomputed PlutoSliderServer states, see [https://github.com/JuliaPluto/PlutoSliderServer.jl/pull/29](https://github.com/JuliaPluto/PlutoSliderServer.jl/pull/29). Not relevant outside of this use (for now...).
 
-The returned value should be an iterable object that you can call `length` on (like a `Vector` or a `Generator` without filter) or return [`PlutoAbstractDingetjes.Bonds.InfinitePossibilities()`](@ref) if this set is inifinite.
-
-#### Examples
-```julia
-struct MySlider
-    range::AbstractRange{<:Real}
-end
-
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
-
-PlutoAbstractDingetjes.Bonds.possible_values(s::MySlider) = s.range
-```
-
-```julia
-struct MyTextBox end
-
-Base.show(io::IO, m::MIME"text/html", s::MyTextBox) = show(io, m, HTML("<input type=text>"))
-
-PlutoAbstractDingetjes.Bonds.possible_values(s::MySlider) = PlutoAbstractDingetjes.Bonds.InfinitePossibilities()
-```
-
-
-### `Bonds.validate_value`
-Validate a value received from the browser before "doing the pluto thing". In a notebook containing `@bind x my_widget`, Pluto will run `PlutoAbstractDingetjes.Bonds.validate_value(my_widget, \$value_from_javascript)`. If the result is `false`, then the value from JavaScript is considered "invalid" or "insecure", and no further code will be executed.
-
-This is a protection measure when using your widget on a public PlutoSliderServer, where people could write fake requests that set bonds to arbitrary values.
-
-The returned value should be a `Boolean`.
-
-#### Example
-```julia
-struct MySlider
-    range::AbstractRange{<:Real}
-end
-
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
-
-PlutoAbstractDingetjes.Bonds.validate_value(s::MySlider, x::Any) = x isa Real && first(s.range) <= x <= last(s.range)
-```
-
+> ***For more features, see the [DOCUMENTATION](https://docs.juliahub.com/AbstractPlutoDingetjes/UHbnu/)***
