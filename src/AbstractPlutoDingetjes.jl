@@ -6,6 +6,8 @@ Take a look at [`PlutoAbstractDingetjes.Bonds`](@ref).
 """
 module AbstractPlutoDingetjes
 
+export Bonds, is_inside_pluto, is_supported_by_display
+
 
 include_dependency("../Project.toml")
 
@@ -91,6 +93,9 @@ end
 
 module Bonds
 import ..AbstractPlutoDingetjes
+
+export initial_value, transform_value, possible_values, validate_value
+export NotGiven, InfinitePossibilities
 
 """
 The initial value of a bond. In a notebook containing `@bind x my_widget`, this will be used in two cases:
