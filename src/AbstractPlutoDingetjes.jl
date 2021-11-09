@@ -194,7 +194,7 @@ PlutoAbstractDingetjes.Bonds.possible_values(s::MySlider) = PlutoAbstractDingetj
 ```
 
 !!! info "Note about `transform_value`"
-    If you are also using [`transform_value`](@ref) for your widget, then the values returned by `possible_values` should be the values **after** transformation.
+    If you are also using [`transform_value`](@ref) for your widget, then the values returned by `possible_values` should be the values **before** transformation.
 
 !!! compat "Pluto TODO"
     This feature only works in Pluto version TODO: NOT RELEASED YET or above.
