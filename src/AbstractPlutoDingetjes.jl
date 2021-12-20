@@ -221,20 +221,20 @@ end
 
 Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
 
-AbstractPlutoDingetjes.Bonds.validate_value(s::MySlider, x::Any) = x isa Real && first(s.range) <= x <= last(s.range)
+AbstractPlutoDingetjes.Bonds.validate_value(s::MySlider, from_browser::Real) = first(s.range) <= from_browser <= last(s.range)
 ```
 
 !!! info "Note about `transform_value`"
     If you are also using [`transform_value`](@ref) for your widget, then the value validated by `validate_value` will be the value **before** transformation.
 
-!!! warning
-    Be sure to add a dispatch for `validate_value(s::MyWidget, x::Any)`, not just for `validate_value(s::MyWidget, x::ExpectedType)`, since this would return the fallback value `true` when `x` is not of the expected type.
+!!! info
+    The fallback method is `validate_value(::Any, ::Any) = false`. In the example above, this means that if the value is not a `Real`, it is automatically considered invalid.
 
 !!! compat "Pluto TODO"
     This feature only works in Pluto version TODO: NOT RELEASED YET or above.
 
 """
-validate_value(bond::Any, input::Any) = true
+validate_value(bond::Any, input::Any) = false
 
 
 end
