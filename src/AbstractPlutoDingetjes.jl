@@ -55,12 +55,13 @@ end
 
 See also: [`is_inside_pluto`](@ref).
 """
-is_supported_by_display(io::IO, x::Any) = if !_loaded_ref[]
-    error("`is_supported_by_display` can only be called inside a function, **after** your package has been imported. You can not call the function at top-level.")
-else
-    features = get(io, :pluto_supported_integration_features, [])
-    x ∈ features
-end
+is_supported_by_display(io::IO, x::Any) =
+    if !_loaded_ref[]
+        error("`is_supported_by_display` can only be called inside a function, **after** your package has been imported. You can not call the function at top-level.")
+    else
+        features = get(io, :pluto_supported_integration_features, [])
+        x ∈ features
+    end
 
 
 """
@@ -70,11 +71,12 @@ is_inside_pluto()::Bool
 
 Are we running inside a Pluto notebook?
 """
-is_inside_pluto()::Bool = if !_loaded_ref[]
-    error("`is_inside_pluto` can only be called inside a function, **after** your package has been imported. You can not call the function at top-level.")
-else
-    isdefined(Main, :PlutoRunner)
-end
+is_inside_pluto()::Bool =
+    if !_loaded_ref[]
+        error("`is_inside_pluto` can only be called inside a function, **after** your package has been imported. You can not call the function at top-level.")
+    else
+        isdefined(Main, :PlutoRunner)
+    end
 """
 ```julia
 is_inside_pluto(io::IO)::Bool
@@ -84,11 +86,12 @@ Are we rendering inside a Pluto notebook?
 
 This function should be used inside a `Base.show` method, and the first argument should be the `io` provided to the `Base.show` method.
 """
-is_inside_pluto(io::IO)::Bool = if !_loaded_ref[]
-    error("`is_inside_pluto` can only be called inside a function, **after** your package has been imported. You can not call the function at top-level.")
-else
-    get(io, :is_pluto, false)
-end
+is_inside_pluto(io::IO)::Bool =
+    if !_loaded_ref[]
+        error("`is_inside_pluto` can only be called inside a function, **after** your package has been imported. You can not call the function at top-level.")
+    else
+        get(io, :is_pluto, false)
+    end
 
 
 module Bonds
@@ -114,7 +117,7 @@ Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input ty
 
 AbstractPlutoDingetjes.Bonds.initial_value(s::MySlider) = first(s.range)
 
-# Add the following for the same functionality on Pluto versions TODO and below. Will be ignored in future Pluto versions. See the compat info below.
+# Add the following for the same functionality on Pluto versions 0.17.0 and below. Will be ignored in future Pluto versions. See the compat info below.
 Base.get(s::MySlider) = first(s.range)
 
 ```
@@ -123,8 +126,8 @@ Base.get(s::MySlider) = first(s.range)
     If you are also using [`transform_value`](@ref) for your widget, then the value returned by `initial_value` should be the value **after** transformation.
 
 
-!!! compat "Pluto TODO"
-    This feature only works in Pluto version TODO: NOT RELEASED YET or above.
+!!! compat "Pluto 0.17.1"
+    This feature only works in Pluto version 0.17.1 or above.
 
     Older versions of Pluto used a `Base.get` overload for this (to avoid the need for the `AbstractPlutoDingetjes` package, but we changed our minds 💕). To support all versions of Pluto, use both methods of declaring the initial value.
 
@@ -152,8 +155,8 @@ Base.show(io::IO, m::MIME"text/html", s::MyVectorSlider) = show(io, m, HTML("<in
 AbstractPlutoDingetjes.Bonds.transform_value(s::MySlider, value_from_javascript::Int) = s.values[value_from_javascript]
 ```
 
-!!! compat "Pluto TODO"
-    This feature only works in Pluto version TODO: NOT RELEASED YET or above. Values are not transformed in older versions.
+!!! compat "Pluto 0.17.1"
+    This feature only works in Pluto version 0.17.1 or above. Values are not transformed in older versions.
 
     Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 
@@ -196,8 +199,8 @@ AbstractPlutoDingetjes.Bonds.possible_values(s::MySlider) = AbstractPlutoDingetj
 !!! info "Note about `transform_value`"
     If you are also using [`transform_value`](@ref) for your widget, then the values returned by `possible_values` should be the values **before** transformation.
 
-!!! compat "Pluto TODO"
-    This feature only works in Pluto version TODO: NOT RELEASED YET or above.
+!!! compat "Pluto 0.17.3"
+    This feature only works in Pluto version 0.17.3 or above.
 
 """
 possible_values(bond::Any) = NotGiven()
