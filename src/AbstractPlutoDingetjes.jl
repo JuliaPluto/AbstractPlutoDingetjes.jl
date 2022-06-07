@@ -244,7 +244,6 @@ end
 
 
 
-
 module Display
 import ..AbstractPlutoDingetjes
 
@@ -254,7 +253,15 @@ struct _PublishToJS
 end
 function Base.show(io::IO, ::MIME"text/javascript", ptj::_PublishToJS)
     core_published_to_js = get(io, :pluto_published_to_js, nothing)
-    @assert core_published_to_js !== nothing
+    @assert core_published_to_js !== nothing """
+    `AbstractPlutoDingetjes.Display.published_to_js` is not supported by this `IO` display. Currently, only Pluto.jl is supported.
+
+    If you are not using `published_to_js` (or you do not know what it is), then please report this error to the package that you are using.
+
+    If you are trying to use `published_to_js` but it is not working, please make sure that:
+    - Pluto is up to date.
+    - The original IO context is used to render the widget, see the documentation for `published_to_js` to learn more.
+    """
 
     core_published_to_js(io, ptj.x)
 end
@@ -266,7 +273,7 @@ Base.show(io::IO, ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
 AbstractPlutoDingetjes.Display.published_to_js(x)
 ```
 
-Make the object `x` available to the JS runtime of this cell, to be interpolated inside a `<script>` element.
+Make the object `x` available to the JS runtime of this cell, to be rendered inside a `<script>` element.
 
 # Example
 ```julia
@@ -289,6 +296,78 @@ let
     "\"")
 end
 ```
+
+# Note about IO context
+
+The object that `published_to_js` returns needs to be rendered using the IO context that Pluto uses to render cell output. If you are using HypertextLiteral.jl, then this is easy to achieve. 
+
+The example above is using `HypertextLiteral.@htl`, and the cell returns a `HypertextLiteral` object, which will be rendered by Pluto. This means that Pluto will render it using its magical IO context, and all is good!
+
+## Custom show method
+
+Below is a second example, to use when your are writing a **custom HTML show method for your own type**:
+
+```julia
+struct MyType
+    data
+end
+
+function Base.show(io::IO, m::MIME"text/html", x::MyType)
+
+    # ✅ This works
+    show(io, m, @htl("\""
+    <script>
+    let data = \$(published_to_js(x.data))
+    console.log(data)
+    </script>
+    "\""))
+end
+```
+
+Test it out with:
+
+```julia
+MyType([1,2,3])
+```
+
+The trick that makes it work is: `show(io, m, @htl(...))`. This will take your `HypertextLiteral` object, and **render it using the `io` object that was passed in**.
+
+## Without HypertextLiteral.jl
+
+The following would not work:
+
+```julia
+function Base.show(io::IO, m::MIME"text/html", x::MyType)
+
+    # 🛑 This does not work
+    println(io, "\""
+    <script>
+    let data = \$(published_to_js(x.data))
+    console.log(data)
+    </script>
+    "\"")
+end
+```
+
+This does not work, because the **string interpolation (i.e. `"\"" ... \$(published_to_js(x.data)) ... "\""`) happens on its own**, without the `io` context used to render it.
+
+The solution is to use HypertextLiteral.jl, passing through the `io` in your show method. If you can't use HypertextLiteral.jl, you could use `repr` to manually render published object to a string, using `io` as the context:
+
+```julia
+function Base.show(io::IO, m::MIME"text/html", x::MyType)
+    
+    # 🟡 This works, but we recommend the HypertextLiteral.jl example instead.
+    published_js = repr(published_to_js(x.data); context=io)
+
+    println(io, "\""
+    <script>
+    let data = \$(published_js)
+    console.log(data)
+    </script>
+    "\"")
+end
+```
+
 """
 published_to_js(x) = _PublishToJS(x)
 
