@@ -274,7 +274,7 @@ Base.show(io::IO, ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
 AbstractPlutoDingetjes.Display.published_to_js(x)
 ```
 
-Make the object `x` available to the JS runtime of this cell, to be rendered inside a `<script>` element.
+Make the object `x` available to the JS runtime of this cell, to be rendered inside a `<script>` element. This system uses Pluto's optimized data transfer, which is much more efficient for large amounts of data, including lossless transfer for `Vector{UInt8}` and `Vector{Float64}` (see the table below).
 
 # Example
 ```julia
@@ -297,6 +297,31 @@ let
     "\"")
 end
 ```
+
+# Types
+
+| Julia | JavaScript |
+|:---------- |:---------- |
+| `String`, `Symbol` | `string` |
+| `Boolean` | `boolean` |
+| `Int64`, `Int32`, `Int16`, `Int8`, `UInt64`, `UInt32`, `UInt16`, `UInt8`, `Float32`, `Float64` | `Number` |
+| `Nothing`, `Missing` | `null` |
+| `DateTime` | [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) |
+| `UUID`, `MIME` | `string` |
+| --- | --- |
+| `Dict` | `object` |
+| `NamedTuple` | `object` |
+| `Vector` | `Array` |
+| `Tuple` | `Array` |
+| `Vector{Int8}` | [`Int8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int8Array) |
+| `Vector{UInt8}` | [`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) |
+| `Vector{Int16}` | [`Int16Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int16Array) |
+| `Vector{UInt16}` | [`Uint16Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint16Array) |
+| `Vector{Int32}` | [`Int32Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int32Array) |
+| `Vector{UInt32}` | [`Uint32Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array) |
+| `Vector{Float32}` | [`Float32Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float32Array) |
+| `Vector{Float64}` | [`Float64Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float64Array) |
+
 
 # Note about IO context
 
