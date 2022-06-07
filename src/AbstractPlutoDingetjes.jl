@@ -246,6 +246,7 @@ end
 
 module Display
 import ..AbstractPlutoDingetjes
+export published_to_js
 
 
 struct _PublishToJS

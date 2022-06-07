@@ -11,6 +11,13 @@ Modules = [AbstractPlutoDingetjes.Bonds]
 Order   = [:function, :type]
 ```
 
+# Display
+
+```@autodocs
+Modules = [AbstractPlutoDingetjes.Display]
+Order   = [:function]
+```
+
 # Extras
 
 ```@autodocs
