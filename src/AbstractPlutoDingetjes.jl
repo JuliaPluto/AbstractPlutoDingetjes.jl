@@ -258,6 +258,8 @@ function Base.show(io::IO, ::MIME"text/javascript", ptj::_PublishToJS)
 
     core_published_to_js(io, ptj.x)
 end
+Base.show(io::IO, ::MIME"text/plain", ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
+Base.show(io::IO, ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
 
 """
 ```julia
