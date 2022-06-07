@@ -258,6 +258,36 @@ function Base.show(io::IO, ::MIME"text/javascript", ptj::_PublishToJS)
 
     core_published_to_js(io, ptj.x)
 end
+
+"""
+```julia
+AbstractPlutoDingetjes.Display.published_to_js(x)
+```
+
+Make the object `x` available to the JS runtime of this cell, to be interpolated inside a `<script>` element.
+
+# Example
+```julia
+import HypertextLiteral: @htl
+import AbstractPlutoDingetjes.Display: published_to_js
+
+let
+    x = Dict(
+        "data" => rand(Float64, 20),
+        "name" => "juliette",
+    )
+
+    @htl("\""
+    <script>
+    // we interpolate into JavaScript:
+    const x = \$(published_to_js(x))
+
+    console.log(x.name, x.data)
+    </script>
+    "\"")
+end
+```
+"""
 published_to_js(x) = _PublishToJS(x)
 
 end
