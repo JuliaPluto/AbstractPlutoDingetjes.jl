@@ -307,8 +307,6 @@ incorporate_last_bond(
     previous_value_from_js::Any
 ) = just_created
 
-end
-
 
 end
 
