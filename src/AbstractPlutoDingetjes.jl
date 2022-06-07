@@ -239,4 +239,15 @@ validate_value(bond::Any, input::Any) = false
 
 end
 
+
+###########################
+
+
+
+
+module Display
+import ..AbstractPlutoDingetjes
+
+end
+
 end
