@@ -248,6 +248,18 @@ end
 module Display
 import ..AbstractPlutoDingetjes
 
+
+struct _PublishToJS
+    x
+end
+function Base.show(io::IO, ::MIME"text/javascript", ptj::_PublishToJS)
+    core_publish_to_js = get(io, :pluto_publish_to_js, nothing)
+    @assert core_publish_to_js !== nothing
+
+    core_publish_to_js(io, ptj.x)
+end
+publish_to_js(x) = _PublishToJS(x)
+
 end
 
 end
