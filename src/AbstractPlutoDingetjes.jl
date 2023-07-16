@@ -274,7 +274,10 @@ Base.show(io::IO, ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
 AbstractPlutoDingetjes.Display.published_to_js(x)
 ```
 
-Make the object `x` available to the JS runtime of this cell, to be rendered inside a `<script>` element. This system uses Pluto's optimized data transfer, which is much more efficient for large amounts of data, including lossless transfer for `Vector{UInt8}` and `Vector{Float64}` (see the table below).
+Make the object `x` available to the JS runtime of this cell, to be rendered
+inside a `<script>` element. This system uses Pluto's optimized data transfer,
+which is much more efficient for large amounts of data, including lossless
+transfer for `Vector{UInt8}` and `Vector{Float64}` (see the table below).
 
 # Example
 ```julia
@@ -325,13 +328,18 @@ end
 
 # Note about IO context
 
-The object that `published_to_js` returns needs to be rendered using the IO context that Pluto uses to render cell output. If you are using HypertextLiteral.jl, then this is easy to achieve. 
+The object that `published_to_js` returns needs to be rendered using the IO
+context that Pluto uses to render cell output. If you are using
+HypertextLiteral.jl, then this is easy to achieve. 
 
-The example above is using `HypertextLiteral.@htl`, and the cell returns a `HypertextLiteral` object, which will be rendered by Pluto. This means that Pluto will render it using its magical IO context, and all is good!
+The example above is using `HypertextLiteral.@htl`, and the cell returns a
+`HypertextLiteral` object, which will be rendered by Pluto. This means that
+Pluto will render it using its magical IO context, and all is good!
 
 ## Custom show method
 
-Below is a second example, to use when your are writing a **custom HTML show method for your own type**:
+Below is a second example, to use when your are writing a **custom HTML show
+method for your own type**:
 
 ```julia
 struct MyType
@@ -356,7 +364,9 @@ Test it out with:
 MyType([1,2,3])
 ```
 
-The trick that makes it work is: `show(io, m, @htl(...))`. This will take your `HypertextLiteral` object, and **render it using the `io` object that was passed in**.
+The trick that makes it work is: `show(io, m, @htl(...))`. This will take your
+`HypertextLiteral` object, and **render it using the `io` object that was passed
+in**.
 
 ## Without HypertextLiteral.jl
 
@@ -375,9 +385,13 @@ function Base.show(io::IO, m::MIME"text/html", x::MyType)
 end
 ```
 
-This does not work, because the **string interpolation (i.e. `"\"" ... \$(published_to_js(x.data)) ... "\""`) happens on its own**, without the `io` context used to render it.
+This does not work, because the **string interpolation (i.e. `"\"" ...
+\$(published_to_js(x.data)) ... "\""`) happens on its own**, without the `io`
+context used to render it.
 
-The solution is to use HypertextLiteral.jl, passing through the `io` in your show method. If you can't use HypertextLiteral.jl, you could use `repr` to manually render published object to a string, using `io` as the context:
+The solution is to use HypertextLiteral.jl, passing through the `io` in your
+show method. If you can't use HypertextLiteral.jl, you could use `repr` to
+manually render published object to a string, using `io` as the context:
 
 ```julia
 function Base.show(io::IO, m::MIME"text/html", x::MyType)
@@ -393,6 +407,23 @@ function Base.show(io::IO, m::MIME"text/html", x::MyType)
     "\"")
 end
 ```
+
+# Note on published object caching
+
+Whenever a Julia object is sent to Pluto using `published_to_js`, its value is
+cached so that subsequent requests for the same object are served faster. This
+means that Pluto already optimizes the performance of sending data from Julia to
+Javascript and it is especially useful when the same object is rendered multiple
+times within the notebook.
+
+This means that: If you use published_to_js twice on the same object within the
+same cell, or in two different cells, the data is only transmitted once. The
+second `published_to_js` just contains a reference to the same data.
+
+It is important to note that mutating an object that has already been sent to
+JavaScript with `published_to_js` will not change the value of this object on
+the JavaScript side, even if the cells with the `published_to_js` calls are
+re-run.
 
 """
 published_to_js(x) = _PublishToJS(x)
