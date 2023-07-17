@@ -255,13 +255,16 @@ end
 function Base.show(io::IO, ::MIME"text/javascript", ptj::_PublishToJS)
     core_published_to_js = get(io, :pluto_published_to_js, nothing)
     @assert core_published_to_js !== nothing """
-    `AbstractPlutoDingetjes.Display.published_to_js` is not supported by this `IO` display. Currently, only Pluto.jl is supported.
+    `AbstractPlutoDingetjes.Display.published_to_js` is not supported by this `IO` display.
 
-    If you are not using `published_to_js` (or you do not know what it is), then please report this error to the package that you are using.
+    If you are not using `published_to_js` (or you do not know what it is), or you are not using Pluto, then please report this error to the package that you are using.
 
     If you are trying to use `published_to_js` but it is not working, please make sure that:
     - Pluto is up to date.
-    - The original IO context is used to render the widget, see the documentation for `published_to_js` to learn more.
+    - The original IO context is used to render the widget.
+    - If you want to support non-Pluto environments, you use `AbstractPlutoDingetjes.is_supported_by_display` for a fallback.
+    
+    See the documentation for `published_to_js` to learn more about these points.
     """
 
     core_published_to_js(io, ptj.x)
