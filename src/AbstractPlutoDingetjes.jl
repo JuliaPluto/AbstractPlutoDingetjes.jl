@@ -152,7 +152,7 @@ end
 
 Base.show(io::IO, m::MIME"text/html", s::MyVectorSlider) = show(io, m, HTML("<input type=range min=1 max=\$(length(s.values))>"))
 
-AbstractPlutoDingetjes.Bonds.transform_value(s::MySlider, value_from_javascript::Int) = s.values[value_from_javascript]
+AbstractPlutoDingetjes.Bonds.transform_value(s::MyVectorSlider, value_from_javascript::Int) = s.values[value_from_javascript]
 ```
 
 !!! compat "Pluto 0.17.1"
