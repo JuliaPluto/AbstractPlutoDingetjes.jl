@@ -2,7 +2,7 @@
 """
 An abstract package to be implemented by packages/people who create widgets/*dingetjes* for Pluto. If you are just happy using Pluto to make cool stuff, you probably don't want to use this package directly.
 
-Take a look at [`AbstractPlutoDingetjes.Bonds`](@ref).
+Take a look at [`AbstractPlutoDingetjes.Bonds`](@ref) and [`AbstractPlutoDingetjes.Display`](@ref).
 """
 module AbstractPlutoDingetjes
 
@@ -129,7 +129,7 @@ Base.get(s::MySlider) = first(s.range)
 !!! compat "Pluto 0.17.1"
     This feature only works in Pluto version 0.17.1 or above.
 
-    Older versions of Pluto used a `Base.get` overload for this (to avoid the need for the `AbstractPlutoDingetjes` package, but we changed our minds 💕). To support all versions of Pluto, use both methods of declaring the initial value.
+    Older versions of Pluto used a `Base.get` overload for this (to avoid the need for the AbstractPlutoDingetjes package, but we changed our minds 💕). To support all versions of Pluto, use both methods of declaring the initial value.
 
     Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 
@@ -424,6 +424,54 @@ It is important to note that mutating an object that has already been sent to
 JavaScript with `published_to_js` will not change the value of this object on
 the JavaScript side, even if the cells with the `published_to_js` calls are
 re-run.
+
+
+# Compatibility
+
+## Old Pluto versions
+
+!!! compat "Pluto 0.19.28"
+    This feature only works in Pluto version 0.19.28 (July 2023) or above.
+
+    Older versions of Pluto used `PlutoRunner.publish_to_js` for this (to avoid the need for the AbstractPlutoDingetjes package, but we changed our minds 💕).
+
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget:
+    
+    ```julia
+    AbstractPlutoDingetjes.is_supported_by_display(io, published_to_js) ? 
+        AbstractPlutoDingetjes.Display.published_to_js(x) : 
+        PlutoRunner.publish_to_js(x)
+    ```
+    
+    (You need a reference to `io` for this, so this is useful inside a custom `Base.show` method for your own struct type.)
+
+## Outside of Pluto
+
+This feature only works in Pluto-compatible environments (i.e. Pluto). Outside of Pluto, you might be happy with the default HypertextLiteral [script interpolation](https://juliapluto.github.io/HypertextLiteral.jl/stable/script/). This is less performant for large objects, and some Julia types are mapped to a different JavaScript type (e.g. `Vector{Int32}` is mapped to a simple `Array` instead of `Int32Array`), but it might be good enough for your use case.
+
+In your interpolation, check for support, and otherwise, just interpolate the object directly:
+
+```julia
+AbstractPlutoDingetjes.is_supported_by_display(io, published_to_js) ? 
+    AbstractPlutoDingetjes.Display.published_to_js(x) : 
+    x
+```
+
+## Both
+
+To support old versions of Pluto, and also support non-Pluto displays, you can combine the two:
+
+```julia
+AbstractPlutoDingetjes.is_supported_by_display(io, published_to_js) ? 
+    # modern Pluto
+    AbstractPlutoDingetjes.Display.published_to_js(x) : 
+    isdefined(Main, :PlutoRunner) && isdefined(Main.PlutoRunner, :publish_to_js) ?
+    # old Pluto
+    PlutoRunner.publish_to_js(x) :
+    # not Pluto
+    x
+```
+
 
 """
 published_to_js(x) = _PublishToJS(x)
