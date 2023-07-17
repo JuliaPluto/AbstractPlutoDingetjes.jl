@@ -2,7 +2,7 @@
 """
 An abstract package to be implemented by packages/people who create widgets/*dingetjes* for Pluto. If you are just happy using Pluto to make cool stuff, you probably don't want to use this package directly.
 
-Take a look at [`AbstractPlutoDingetjes.Bonds`](@ref).
+Take a look at [`AbstractPlutoDingetjes.Bonds`](@ref) and [`AbstractPlutoDingetjes.Display`](@ref).
 """
 module AbstractPlutoDingetjes
 
@@ -129,7 +129,7 @@ Base.get(s::MySlider) = first(s.range)
 !!! compat "Pluto 0.17.1"
     This feature only works in Pluto version 0.17.1 or above.
 
-    Older versions of Pluto used a `Base.get` overload for this (to avoid the need for the `AbstractPlutoDingetjes` package, but we changed our minds 💕). To support all versions of Pluto, use both methods of declaring the initial value.
+    Older versions of Pluto used a `Base.get` overload for this (to avoid the need for the AbstractPlutoDingetjes package, but we changed our minds 💕). To support all versions of Pluto, use both methods of declaring the initial value.
 
     Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 
@@ -244,9 +244,240 @@ end
 
 
 
-
 module Display
 import ..AbstractPlutoDingetjes
+export published_to_js
+
+
+struct _PublishToJS
+    x
+end
+function Base.show(io::IO, ::MIME"text/javascript", ptj::_PublishToJS)
+    core_published_to_js = get(io, :pluto_published_to_js, nothing)
+    @assert core_published_to_js !== nothing """
+    `AbstractPlutoDingetjes.Display.published_to_js` is not supported by this `IO` display.
+
+    If you are not using `published_to_js` (or you do not know what it is), or you are not using Pluto, then please report this error to the package that you are using.
+
+    If you are trying to use `published_to_js` but it is not working, please make sure that:
+    - Pluto is up to date.
+    - The original IO context is used to render the widget.
+    - If you want to support non-Pluto environments, you use `AbstractPlutoDingetjes.is_supported_by_display` for a fallback.
+    
+    See the documentation for `published_to_js` to learn more about these points.
+    """
+
+    core_published_to_js(io, ptj.x)
+end
+Base.show(io::IO, ::MIME"text/plain", ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
+Base.show(io::IO, ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
+
+"""
+```julia
+AbstractPlutoDingetjes.Display.published_to_js(x)
+```
+
+Make the object `x` available to the JS runtime of this cell, to be rendered
+inside a `<script>` element. This system uses Pluto's optimized data transfer,
+which is much more efficient for large amounts of data, including lossless
+transfer for `Vector{UInt8}` and `Vector{Float64}` (see the table below).
+
+# Example
+```julia
+import HypertextLiteral: @htl
+import AbstractPlutoDingetjes.Display: published_to_js
+
+let
+    x = Dict(
+        "data" => rand(Float64, 20),
+        "name" => "juliette",
+    )
+
+    @htl("\""
+    <script>
+    // we interpolate into JavaScript:
+    const x = \$(published_to_js(x))
+
+    console.log(x.name, x.data)
+    </script>
+    "\"")
+end
+```
+
+# Types
+
+| Julia | JavaScript |
+|:---------- |:---------- |
+| `String`, `Symbol` | `string` |
+| `Boolean` | `boolean` |
+| `Int64`, `Int32`, `Int16`, `Int8`, `UInt64`, `UInt32`, `UInt16`, `UInt8`, `Float32`, `Float64` | `Number` |
+| `Nothing`, `Missing` | `null` |
+| `DateTime` | [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) |
+| `UUID`, `MIME` | `string` |
+| --- | --- |
+| `Dict` | `object` |
+| `NamedTuple` | `object` |
+| `Vector` | `Array` |
+| `Tuple` | `Array` |
+| `Vector{Int8}` | [`Int8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int8Array) |
+| `Vector{UInt8}` | [`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) |
+| `Vector{Int16}` | [`Int16Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int16Array) |
+| `Vector{UInt16}` | [`Uint16Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint16Array) |
+| `Vector{Int32}` | [`Int32Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int32Array) |
+| `Vector{UInt32}` | [`Uint32Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array) |
+| `Vector{Float32}` | [`Float32Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float32Array) |
+| `Vector{Float64}` | [`Float64Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float64Array) |
+
+
+# Note about IO context
+
+The object that `published_to_js` returns needs to be rendered using the IO
+context that Pluto uses to render cell output. If you are using
+HypertextLiteral.jl, then this is easy to achieve. 
+
+The example above is using `HypertextLiteral.@htl`, and the cell returns a
+`HypertextLiteral` object, which will be rendered by Pluto. This means that
+Pluto will render it using its magical IO context, and all is good!
+
+## Custom show method
+
+Below is a second example, to use when your are writing a **custom HTML show
+method for your own type**:
+
+```julia
+struct MyType
+    data
+end
+
+function Base.show(io::IO, m::MIME"text/html", x::MyType)
+
+    # ✅ This works
+    show(io, m, @htl("\""
+    <script>
+    let data = \$(published_to_js(x.data))
+    console.log(data)
+    </script>
+    "\""))
+end
+```
+
+Test it out with:
+
+```julia
+MyType([1,2,3])
+```
+
+The trick that makes it work is: `show(io, m, @htl(...))`. This will take your
+`HypertextLiteral` object, and **render it using the `io` object that was passed
+in**.
+
+## Without HypertextLiteral.jl
+
+The following would not work:
+
+```julia
+function Base.show(io::IO, m::MIME"text/html", x::MyType)
+
+    # 🛑 This does not work
+    println(io, "\""
+    <script>
+    let data = \$(published_to_js(x.data))
+    console.log(data)
+    </script>
+    "\"")
+end
+```
+
+This does not work, because the **string interpolation (i.e. `"\"" ...
+\$(published_to_js(x.data)) ... "\""`) happens on its own**, without the `io`
+context used to render it.
+
+The solution is to use HypertextLiteral.jl, passing through the `io` in your
+show method. If you can't use HypertextLiteral.jl, you could use `repr` to
+manually render published object to a string, using `io` as the context:
+
+```julia
+function Base.show(io::IO, m::MIME"text/html", x::MyType)
+    
+    # 🟡 This works, but we recommend the HypertextLiteral.jl example instead.
+    published_js = repr(published_to_js(x.data); context=io)
+
+    println(io, "\""
+    <script>
+    let data = \$(published_js)
+    console.log(data)
+    </script>
+    "\"")
+end
+```
+
+# Note on published object caching
+
+Whenever a Julia object is sent to Pluto using `published_to_js`, its value is
+cached so that subsequent requests for the same object are served faster. This
+means that Pluto already optimizes the performance of sending data from Julia to
+Javascript and it is especially useful when the same object is rendered multiple
+times within the notebook.
+
+This means that: If you use published_to_js twice on the same object within the
+same cell, or in two different cells, the data is only transmitted once. The
+second `published_to_js` just contains a reference to the same data.
+
+It is important to note that mutating an object that has already been sent to
+JavaScript with `published_to_js` will not change the value of this object on
+the JavaScript side, even if the cells with the `published_to_js` calls are
+re-run.
+
+
+# Compatibility
+
+## Old Pluto versions
+
+!!! compat "Pluto 0.19.28"
+    This feature only works in Pluto version 0.19.28 (July 2023) or above.
+
+    Older versions of Pluto used `PlutoRunner.publish_to_js` for this (to avoid the need for the AbstractPlutoDingetjes package, but we changed our minds 💕).
+
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget:
+    
+    ```julia
+    AbstractPlutoDingetjes.is_supported_by_display(io, published_to_js) ? 
+        AbstractPlutoDingetjes.Display.published_to_js(x) : 
+        PlutoRunner.publish_to_js(x)
+    ```
+    
+    (You need a reference to `io` for this, so this is useful inside a custom `Base.show` method for your own struct type.)
+
+## Outside of Pluto
+
+This feature only works in Pluto-compatible environments (i.e. Pluto). Outside of Pluto, you might be happy with the default HypertextLiteral [script interpolation](https://juliapluto.github.io/HypertextLiteral.jl/stable/script/). This is less performant for large objects, and some Julia types are mapped to a different JavaScript type (e.g. `Vector{Int32}` is mapped to a simple `Array` instead of `Int32Array`), but it might be good enough for your use case.
+
+In your interpolation, check for support, and otherwise, just interpolate the object directly:
+
+```julia
+AbstractPlutoDingetjes.is_supported_by_display(io, published_to_js) ? 
+    AbstractPlutoDingetjes.Display.published_to_js(x) : 
+    x
+```
+
+## Both
+
+To support old versions of Pluto, and also support non-Pluto displays, you can combine the two:
+
+```julia
+AbstractPlutoDingetjes.is_supported_by_display(io, published_to_js) ? 
+    # modern Pluto
+    AbstractPlutoDingetjes.Display.published_to_js(x) : 
+    isdefined(Main, :PlutoRunner) && isdefined(Main.PlutoRunner, :publish_to_js) ?
+    # old Pluto
+    PlutoRunner.publish_to_js(x) :
+    # not Pluto
+    x
+```
+
+
+"""
+published_to_js(x) = _PublishToJS(x)
 
 end
 
