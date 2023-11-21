@@ -479,6 +479,37 @@ AbstractPlutoDingetjes.is_supported_by_display(io, published_to_js) ?
 """
 published_to_js(x) = _PublishToJS(x)
 
+
+
+
+
+
+struct _JSLink
+    callback
+end
+function Base.show(io::IO, ::MIME"text/javascript", wjl::_JSLink)
+    core_with_js_link = get(io, :pluto_with_js_link, nothing)
+    @assert core_with_js_link !== nothing """
+    `AbstractPlutoDingetjes.Display.with_js_link` is not supported by this `IO` display.
+
+    If you are not using `with_js_link` (or you do not know what it is), or you are not using Pluto, then please report this error to the package that you are using.
+
+    If you are trying to use `with_js_link` but it is not working, please make sure that:
+    - Pluto is up to date.
+    - The original IO context is used to render the widget.
+    - If you want to support non-Pluto environments, you use `AbstractPlutoDingetjes.is_supported_by_display` for a fallback.
+    
+    See the documentation for `with_js_link` to learn more about these points.
+    """
+
+    core_with_js_link(io, wjl.callback)
+end
+Base.show(io::IO, ::MIME"text/plain", wjl::_JSLink) = show(io, MIME"text/javascript"(), wjl)
+Base.show(io::IO, wjl::_JSLink) = show(io, MIME"text/javascript"(), wjl)
+
+with_js_link(x) = _JSLink(x)
+
+
 end
 
 end
