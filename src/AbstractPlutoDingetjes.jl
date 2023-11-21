@@ -1,8 +1,30 @@
 
 """
-An abstract package to be implemented by packages/people who create widgets/*dingetjes* for Pluto. If you are just happy using Pluto to make cool stuff, you probably don't want to use this package directly.
+A more technical package meant for people who develop widgets for other Pluto users. By using and implementing methods from this package, you can give your widget more advanced features.
 
-Take a look at [`AbstractPlutoDingetjes.Bonds`](@ref) and [`AbstractPlutoDingetjes.Display`](@ref).
+Most functions in AbstractPlutoDingetjes are most useful when used with the `type`–`show`–`@htl` recipe. A basic example:
+
+```julia
+import HypertextLiteral: @htl
+
+struct MyCoolSlider
+    min::Real
+    max::Real
+end
+
+function Base.show(io::IO, m::MIME"text/html", d::MyCoolSlider)
+    show(io, m, @htl(
+        ""\"
+        <input type=range min=\$(d.min) max=\$(d.max)>
+        \"""
+    ))
+end
+
+# Use:
+@bind value MyCoolSlider(5, 10)
+```
+
+This example **does not use** AbstractPlutoDingetjes, but AbstractPlutoDingetjes can be used to gradually enhance this widget.
 """
 module AbstractPlutoDingetjes
 
@@ -109,13 +131,21 @@ When not overloaded for your widget, it defaults to returning `missing`.
 
 # Example
 ```julia
+import HypertextLiteral: @htl
+
 struct MySlider
     range::AbstractRange{<:Real}
 end
 
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
+function Base.show(io::IO, m::MIME"text/html", s::MySlider)
+    show(io, m, @htl(
+        "<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"
+    ))
+end
 
-AbstractPlutoDingetjes.Bonds.initial_value(s::MySlider) = first(s.range)
+function AbstractPlutoDingetjes.Bonds.initial_value(s::MySlider)
+    first(s.range)
+end
 
 # Add the following for the same functionality on Pluto versions 0.17.0 and below. Will be ignored in future Pluto versions. See the compat info below.
 Base.get(s::MySlider) = first(s.range)
@@ -146,11 +176,17 @@ When not overloaded for your widget, it defaults to returning the value unchange
 
 # Example
 ```julia
+import HypertextLiteral: @htl
+
 struct MyVectorSlider
     values::Vector{<:Any} # note! a vector of arbitrary objects, not just numbers
 end
 
-Base.show(io::IO, m::MIME"text/html", s::MyVectorSlider) = show(io, m, HTML("<input type=range min=1 max=\$(length(s.values))>"))
+function Base.show(io::IO, m::MIME"text/html", s::MyVectorSlider)
+    show(io, m, @htl(
+        "<input type=range min=1 max=\$(length(s.values))>"
+    ))
+end
 
 AbstractPlutoDingetjes.Bonds.transform_value(s::MyVectorSlider, value_from_javascript::Int) = s.values[value_from_javascript]
 ```
@@ -166,7 +202,7 @@ transform_value(bond::Any, value_from_javascript::Any) = value_from_javascript
 
 
 
-"`NotGiven()` is the default return value of `possible_values(::Any)`."
+"`NotGiven()` is the default return value of `possible_values(::Any)`, if you have not defined an overload."
 struct NotGiven end
 "Return `InfinitePossibilities()` from your overload of [`possible_values`](@ref) to signify that your bond has no finite set of possible values."
 struct InfinitePossibilities end
@@ -179,19 +215,27 @@ The returned value should be an iterable object that you can call `length` on (l
 
 # Examples
 ```julia
+import HypertextLiteral: @htl
+
 struct MySlider
     range::AbstractRange{<:Real}
 end
 
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
+function Base.show(io::IO, m::MIME"text/html", s::MySlider)
+    show(io, m, @htl(
+        "<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"
+    ))
+end
 
 AbstractPlutoDingetjes.Bonds.possible_values(s::MySlider) = s.range
 ```
 
 ```julia
+import HypertextLiteral: @htl
+
 struct MyTextBox end
 
-Base.show(io::IO, m::MIME"text/html", s::MyTextBox) = show(io, m, HTML("<input type=text>"))
+Base.show(io::IO, m::MIME"text/html", s::MyTextBox) = show(io, m, @htl("<input type=text>"))
 
 AbstractPlutoDingetjes.Bonds.possible_values(s::MySlider) = AbstractPlutoDingetjes.Bonds.InfinitePossibilities()
 ```
@@ -215,13 +259,21 @@ The returned value should be a `Boolean`.
 
 # Example
 ```julia
+import HypertextLiteral: @htl
+
 struct MySlider
     range::AbstractRange{<:Real}
 end
 
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
+function Base.show(io::IO, m::MIME"text/html", s::MySlider)
+    show(io, m, @htl(
+        "<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"
+    ))
+end
 
-AbstractPlutoDingetjes.Bonds.validate_value(s::MySlider, from_browser::Real) = first(s.range) <= from_browser <= last(s.range)
+function AbstractPlutoDingetjes.Bonds.validate_value(s::MySlider, from_browser::Real)
+    first(s.range) <= from_browser <= last(s.range)
+end
 ```
 
 !!! info "Note about `transform_value`"
@@ -400,11 +452,11 @@ manually render published object to a string, using `io` as the context:
 function Base.show(io::IO, m::MIME"text/html", x::MyType)
     
     # 🟡 This works, but we recommend the HypertextLiteral.jl example instead.
-    published_js = repr(published_to_js(x.data); context=io)
+    rendered = repr(published_to_js(x.data); context=io)
 
     println(io, "\""
     <script>
-    let data = \$(published_js)
+    let data = \$(rendered)
     console.log(data)
     </script>
     "\"")
@@ -419,7 +471,7 @@ means that Pluto already optimizes the performance of sending data from Julia to
 Javascript and it is especially useful when the same object is rendered multiple
 times within the notebook.
 
-This means that: If you use published_to_js twice on the same object within the
+Also: If you use `published_to_js` twice on the same object within the
 same cell, or in two different cells, the data is only transmitted once. The
 second `published_to_js` just contains a reference to the same data.
 

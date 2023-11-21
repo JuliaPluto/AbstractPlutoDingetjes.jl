@@ -1,7 +1,7 @@
 name = "AbstractPlutoDingetjes"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
 authors = ["Paul Berg <paul@plutojl.org>", "Fons van der Plas <fons@plutojl.org>"]
-version = "1.2.0"
+version = "1.2.1"
 
 [deps]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
