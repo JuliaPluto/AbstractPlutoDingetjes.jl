@@ -16,7 +16,7 @@ function Base.show(io::IO, m::MIME"text/html", d::MyCoolSlider)
     show(io, m, @htl(
         ""\"
         <input type=range min=\$(d.min) max=\$(d.max)>
-        \"""
+        ""\"
     ))
 end
 
