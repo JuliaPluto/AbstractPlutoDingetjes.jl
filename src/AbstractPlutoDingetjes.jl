@@ -2,6 +2,9 @@
 """
 A more technical package meant for people who develop widgets for other Pluto users. By using and implementing methods from this package, you can give your widget more advanced features.
 
+This package is very small, and contains no functional code (all functionality is implemented by Pluto). This means that you can add AbstractPlutoDingetjes.jl as a dependency to your package with almost no overhead!
+
+## Common use
 Most functions in AbstractPlutoDingetjes are most useful when used with the `type`–`show`–`@htl` recipe. A basic example:
 
 ```julia
