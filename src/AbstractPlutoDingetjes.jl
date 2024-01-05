@@ -329,10 +329,15 @@ Base.show(io::IO, ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
 AbstractPlutoDingetjes.Display.published_to_js(x)
 ```
 
-Make the object `x` available to the JS runtime of this cell, to be rendered
-inside a `<script>` element. This system uses Pluto's optimized data transfer,
+Make the object `x` available to the JS runtime of this cell. 
+This system uses Pluto's optimized data transfer,
 which is much more efficient for large amounts of data, including lossless
-transfer for `Vector{UInt8}` and `Vector{Float64}` (see the table below).
+transfer for `Vector{UInt8}` and `Vector{Float64}` (see the table below),
+and a global cache to avoid transmitting the same object twice.
+
+The function `published_to_js` returns a special object that behaves like a
+piece of JavaScript code. We recommend using HypertextLiteral.jl to 
+interpolate the result into a  `<script>` element.
 
 # Example
 ```julia
