@@ -486,6 +486,7 @@ published_to_js(x) = _PublishToJS(x)
 
 struct _JSLink
     callback
+    on_cancellation
 end
 function Base.show(io::IO, ::MIME"text/javascript", wjl::_JSLink)
     core_with_js_link = get(io, :pluto_with_js_link, nothing)
@@ -502,13 +503,12 @@ function Base.show(io::IO, ::MIME"text/javascript", wjl::_JSLink)
     See the documentation for `with_js_link` to learn more about these points.
     """
 
-    core_with_js_link(io, wjl.callback)
+    core_with_js_link(io, wjl.callback, wjl.on_cancellation)
 end
 Base.show(io::IO, ::MIME"text/plain", wjl::_JSLink) = show(io, MIME"text/javascript"(), wjl)
 Base.show(io::IO, wjl::_JSLink) = show(io, MIME"text/javascript"(), wjl)
 
-with_js_link(x) = _JSLink(x)
-
+with_js_link(f::Function, on_cancellation=nothing) = _JSLink(f, on_cancellation)
 
 end
 
