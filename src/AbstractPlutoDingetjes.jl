@@ -278,7 +278,7 @@ AbstractPlutoDingetjes.Display.published_to_js(x)
 ```
 
 Make the object `x` available to the JS runtime of this cell, to be rendered
-inside a `<script>` element. This system uses Pluto's optimized data transfer,
+inside a `<script>` element. This system uses Pluto's optimized data transfer (probably with MsgPack and WebSocket),
 which is much more efficient for large amounts of data, including lossless
 transfer for `Vector{UInt8}` and `Vector{Float64}` (see the table below).
 
@@ -508,6 +508,58 @@ end
 Base.show(io::IO, ::MIME"text/plain", wjl::_JSLink) = show(io, MIME"text/javascript"(), wjl)
 Base.show(io::IO, wjl::_JSLink) = show(io, MIME"text/javascript"(), wjl)
 
+"""
+```julia
+with_js_link(f::Function[, on_cancellation::Function])
+```
+
+Make a Julia function available to the JS runtime of this cell, to be called from JavaScript. This API allows for more advanced use cases than `published_to_js`, but is also more difficult to use.
+
+# Example
+The easiest way to use this API is with HypertextLiteral. Here is a simple example:
+
+```julia
+@htl("\""
+<script>
+const sqrt_from_julia = \$(AbstractPlutoDingetjes.Display.with_js_link(sqrt))
+
+// I can now call sqrt_from_julia like a JavaScript function. It returns a Promise:
+const result = await sqrt_from_julia(9.0)
+console.log(result)
+
+</script>
+"\"")
+```
+
+# API
+The use is very similar to `Display.published_to_js`. `with_js_link` returns a "piece of JavaScript code" that you interpolate directly into a `<script>` tag. 
+
+In JavaScript, the "piece of JavaScript code" returns a function. You can call this function with an argument (which will be passed to your Julia function), and it returns a [`Promise`](https://javascript.info/promise-basics) that resolves to the answer from your Julia function.
+
+# Serialization and inner workings
+The request and response use the same communication protocol as `published_to_js`, so in particular, `Vector{Float64}` or `Vector{UInt8}` are really fast. 
+
+# Multiple clients
+Since this API is designed for one-off requests, this communication does not go through Pluto's state management (the request and response are not stored in the state). If multiple clients are connected in parallel, then the messages are not shared between clients. The client that made the request will receive the response.
+
+# When not to use it
+This API is only meant to support **use cases that can not be covered with (`@bind` and) `Display.published_to_js`**. If possible, the use of these APIs is preferred over `with_js_link`: they will work with the Static HTML export and PlutoSliderServer.
+
+
+# Background task
+JS link calculations are executed as a background task – they can run in parallel with other computations in the notebook.
+
+
+!!! warning "Don't make too many requests!"
+	If you make too many requests from JS, then the notebook can become almost unusable. As a developer using this API, you need to take care to keep your users' notebooks responsive.
+
+	The JS link request returns a `Promise` that resolves to the response. Consider keeping track of whether you are currently requesting something from Julia, and avoid making more requests in the meantime.
+
+	It can also help to use **throttling** or **debouncing** to reduce the number of requests that you make.
+
+# Cancellation
+For advanced use cases, you can also provide a second argument to `with_js_link` – a function that will be called when the link is cancelled. This happens not when the browser disconnects, but when the cell is about to change its output. This can be useful to clean up resources or to cancel a long-running process.
+"""
 with_js_link(f::Function, on_cancellation=nothing) = _JSLink(f, on_cancellation)
 
 end
