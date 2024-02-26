@@ -555,10 +555,17 @@ JS link calculations are executed as a background task – they can run in paral
 
 	The JS link request returns a `Promise` that resolves to the response. Consider keeping track of whether you are currently requesting something from Julia, and avoid making more requests in the meantime.
 
-	It can also help to use **throttling** or **debouncing** to reduce the number of requests that you make.
+	It can also help to use [**throttling**](https://lodash.com/docs#throttle) or [**debouncing**](https://lodash.com/docs#debounce) to reduce the number of requests that you make.
 
 # Cancellation
 For advanced use cases, you can also provide a second argument to `with_js_link` – a function that will be called when the link is cancelled. This happens not when the browser disconnects, but when the cell is about to change its output. This can be useful to clean up resources or to cancel a long-running process.
+
+
+!!! compat "Pluto 0.19.41"
+    This feature only works in Pluto version 0.19.41 or above.
+
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
+
 """
 with_js_link(f::Function, on_cancellation=nothing) = _JSLink(f, on_cancellation)
 
