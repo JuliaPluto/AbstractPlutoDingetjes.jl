@@ -332,8 +332,8 @@ Base.show(io::IO, ptj::_PublishToJS) = show(io, MIME"text/javascript"(), ptj)
 AbstractPlutoDingetjes.Display.published_to_js(x)
 ```
 
-Make the object `x` available to the JS runtime of this cell. 
-This system uses Pluto's optimized data transfer,
+Make the object `x` available to the JS runtime of this cell, to be rendered
+inside a `<script>` element. This system uses Pluto's optimized data transfer (probably with MsgPack and WebSocket),
 which is much more efficient for large amounts of data, including lossless
 transfer for `Vector{UInt8}` and `Vector{Float64}` (see the table below),
 and a global cache to avoid transmitting the same object twice.
@@ -538,6 +538,109 @@ AbstractPlutoDingetjes.is_supported_by_display(io, published_to_js) ?
 
 """
 published_to_js(x) = _PublishToJS(x)
+
+
+
+
+
+
+struct _JSLink
+    callback
+    on_cancellation
+end
+function Base.show(io::IO, ::MIME"text/javascript", wjl::_JSLink)
+    core_with_js_link = get(io, :pluto_with_js_link, nothing)
+    @assert core_with_js_link !== nothing """
+    `AbstractPlutoDingetjes.Display.with_js_link` is not supported by this `IO` display.
+
+    If you are not using `with_js_link` (or you do not know what it is), or you are not using Pluto, then please report this error to the package that you are using.
+
+    If you are trying to use `with_js_link` but it is not working, please make sure that:
+    - Pluto is up to date.
+    - The original IO context is used to render the widget.
+    - If you want to support non-Pluto environments, you use `AbstractPlutoDingetjes.is_supported_by_display` for a fallback.
+    
+    See the documentation for `with_js_link` to learn more about these points.
+    """
+
+    core_with_js_link(io, wjl.callback, wjl.on_cancellation)
+end
+Base.show(io::IO, ::MIME"text/plain", wjl::_JSLink) = show(io, MIME"text/javascript"(), wjl)
+Base.show(io::IO, wjl::_JSLink) = show(io, MIME"text/javascript"(), wjl)
+
+"""
+```julia
+with_js_link(f::Function[, on_cancellation::Function])
+```
+
+Make a Julia function available to the JS runtime of this cell, to be called from JavaScript. This API allows for more advanced use cases than `published_to_js`, but is also more difficult to use.
+
+# Example
+The easiest way to use this API is with HypertextLiteral. Here is a simple example:
+
+```julia
+@htl("\""
+<script>
+const sqrt_from_julia = \$(AbstractPlutoDingetjes.Display.with_js_link(sqrt))
+
+// I can now call sqrt_from_julia like a JavaScript function. It returns a Promise:
+const result = await sqrt_from_julia(9.0)
+console.log(result)
+
+</script>
+"\"")
+```
+
+# API
+The use is very similar to `Display.published_to_js`. `with_js_link` returns a "piece of JavaScript code" that you interpolate directly into a `<script>` tag. 
+
+In JavaScript, the "piece of JavaScript code" returns a function. You can call this function with an argument (which will be passed to your Julia function), and it returns a [`Promise`](https://javascript.info/promise-basics) that resolves to the answer from your Julia function.
+
+# Serialization and inner workings
+The request and response use the same communication protocol as `published_to_js`, so in particular, `Vector{Float64}` or `Vector{UInt8}` are really fast. 
+
+# When not to use it
+This API is only meant to support **use cases that can not be covered with (`@bind` and) `Display.published_to_js`**. If possible, the use of these APIs is preferred over `with_js_link`: they will work with the Static HTML export and PlutoSliderServer.
+
+If the set of possible inputs is quite small, consider precomputing all possible outputs, and using `published_to_js` to publish everything at once.
+
+# Background task
+JS link calculations are executed as a background task (not a thread). They can run in parallel with other computations in the notebook.
+
+
+!!! warning "Don't make too many requests!"
+	If you make too many requests from JS, then the notebook can become almost unusable. As a developer using this API, you need to take care to keep your users' notebooks responsive.
+
+	The JS link request returns a `Promise` that resolves to the response. Consider keeping track of whether you are currently requesting something from Julia, and avoid making more requests in the meantime.
+
+	It can also help to use [**throttling**](https://lodash.com/docs#throttle) or [**debouncing**](https://lodash.com/docs#debounce) to reduce the number of requests that you make.
+    
+    For example, starting requests at a regular interval can lead to big trouble. Instead, wait for the last request to finish, set a delay, and then make the next request.
+
+# Advanced topics
+
+## Multiple clients
+Since this API is designed for one-off requests, this communication does not go through Pluto's state management (the request and response are not stored in the state). If multiple clients are connected in parallel, then the messages are not shared between clients. The client that made the request will receive the response.
+
+## Cancellation
+For advanced use cases, you can also provide a second argument to `with_js_link` – a function that will be called when the link is cancelled. This can be useful to clean up resources or to cancel a long-running process.
+
+Cancellation happens **not** when the browser disconnects, but right before the cell or one of its dependency cells re-evaluates. This is done to prevent using data defined in the notebook that is no longer well-defined.
+
+If your function is long-running, does async I/O work or runs threaded, then it is possible that your link gets cancelled during an execution. Use the `on_cancellation` callback wisely!
+
+## Bidirectional communication
+The primary purpose of this API is for JavaScript to ask a question to Julia, and receive an answer. So there is communication is both directions, but it needs to be initiated from JavaScript.
+
+If you need to send *unrequested* updates from Julia to JavaScript, then you could use polling. [Long polling](https://javascript.info/long-polling) works well with this API, but you need to use the `on_cancellation` callback to clean up resources. Remember that Pluto notebooks can be viewed by multiple clients connected in parallel. [Here](https://github.com/fonsp/disorganised-mess/blob/main/APD%20with_js_link%20bidirectional%203.jl) is an example.
+
+!!! compat "Pluto 0.19.41"
+    This feature only works in Pluto version 0.19.41 or above.
+
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
+
+"""
+with_js_link(f::Function, on_cancellation=nothing) = _JSLink(f, on_cancellation)
 
 end
 
