@@ -642,6 +642,28 @@ If you need to send *unrequested* updates from Julia to JavaScript, then you cou
 """
 with_js_link(f::Function, on_cancellation=nothing) = _JSLink(f, on_cancellation)
 
+
+
+struct _AutoIDGiver
+    source::LineNumberNode
+end
+function Base.show(io::IO, g::_AutoIDGiver)
+    auto_id! = get(io, :pluto_auto_id!, _fallback_auto_id!)
+
+    name = "id_$(
+        string(hash(g.source), base=62)
+    )_$(
+        auto_id!(io)
+    )"
+
+    write(io, name)
+end
+_fallback_auto_id!(::IO) = string(rand(Int))
+
+macro auto_id()
+    _AutoIDGiver(__source__)
+end
+
 end
 
 end
