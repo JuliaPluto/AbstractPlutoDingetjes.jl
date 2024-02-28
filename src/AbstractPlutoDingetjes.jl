@@ -642,6 +642,20 @@ If you need to send *unrequested* updates from Julia to JavaScript, then you cou
 """
 with_js_link(f::Function, on_cancellation=nothing) = _JSLink(f, on_cancellation)
 
+
+
+struct _EmbedDisplay{T}
+    x::T
+end
+function Base.show(io::IO, ::MIME"text/html", s::_EmbedDisplay{T})
+    core_embedded_display = get(io, :pluto_embedded_display, nothing)
+    @assert core_embedded_display !== nothing
+
+    core_embedded_display(io, s.x)
+end
+
+embedded_display(x) = _EmbedDisplay(x)
+
 end
 
 end
