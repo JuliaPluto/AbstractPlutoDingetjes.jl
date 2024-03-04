@@ -600,7 +600,7 @@ In JavaScript, the "piece of JavaScript code" returns a function. You can call t
 The request and response use the same communication protocol as `published_to_js`, so in particular, `Vector{Float64}` or `Vector{UInt8}` are really fast. 
 
 # When not to use it
-This API is only meant to support **use cases that can not be covered with (`@bind` and) `Display.published_to_js`**. If possible, the use of these APIs is preferred over `with_js_link`: they will work with the Static HTML export and PlutoSliderServer.
+This API is only meant to support **use cases that can not be covered with `Display.published_to_js` or `@bind`**. If possible, the use of these APIs is preferred over `with_js_link`: they will work with the Static HTML export and PlutoSliderServer.
 
 If the set of possible inputs is quite small, consider precomputing all possible outputs, and using `published_to_js` to publish everything at once.
 
