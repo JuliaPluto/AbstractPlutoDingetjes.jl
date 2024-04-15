@@ -600,9 +600,17 @@ In JavaScript, the "piece of JavaScript code" returns a function. You can call t
 The request and response use the same communication protocol as `published_to_js`, so in particular, `Vector{Float64}` or `Vector{UInt8}` are really fast. 
 
 # When not to use it
-This API is only meant to support **use cases that can not be covered with `Display.published_to_js` or `@bind`**. If possible, the use of these APIs is preferred over `with_js_link`: they will work with the Static HTML export and PlutoSliderServer.
+This API is only meant to support **use cases that can not be covered with `Display.published_to_js`** (or `@bind`). If possible, the use of these APIs is preferred over `with_js_link`: they will work with the Static HTML export and PlutoSliderServer.
 
-If the set of possible inputs is quite small, consider precomputing all possible outputs, and using `published_to_js` to publish everything at once.
+## `published_to_js` vs `with_js_link`
+If the set of possible inputs is quite small, consider precomputing all possible outputs, and using `published_to_js` to publish everything at once. 
+
+For example, in the `sqrt` example above, if you know that the input will be an integer between 1 and 1 million, then we recommend using `publish_to_js(sqrt.(1:1_000_000))` instead.
+
+## `@bind` vs `with_js_link`
+We recommend using `@bind` instead of `with_js_link` when your widget also makes sense split into two: an input widget (with `@bind`) and an output widget (possibly with `published_to_js`). This will be easier for you to develop, and easier for others to understand. If you are still considering how to design your widget, try to start with `@bind`. But if `with_js_link` is exactly what you are looking for, go for it!
+
+For example, you are showing a map of the world, and you want to show a weather forecast for the location where the user clicks. With `with_js_link`, you could make an awesome GUI where the forecast is shown as an overlay on the map. But a simpler option would be to have one widget where you pick a location on the map, which gets bound to a Julia variable `location`. Then other cells in the notebook can compute the forecast, which you show in the cell directly above or below the map.
 
 # Background task
 JS link calculations are executed as a background task (not a thread). They can run in parallel with other computations in the notebook.
@@ -641,6 +649,16 @@ If you need to send *unrequested* updates from Julia to JavaScript, then you cou
 
 """
 with_js_link(f::Function, on_cancellation=nothing) = _JSLink(f, on_cancellation)
+
+# note: if we want to add a kwarg to this function later, we need a way for users to check support. The solution:
+
+# const with_js_link_kwarg_blablabla_support = Ref(nothing)
+
+# then PlutoRunner will "add support" for `with_js_link_kwarg_blablabla_support`, and users can then use it as a proxy to check support for the kwarg:
+
+# APD.is_supported_by_display(io, with_js_link_kwarg_blablabla_support)
+
+
 
 end
 
