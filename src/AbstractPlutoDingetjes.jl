@@ -110,6 +110,17 @@ is_inside_pluto(io::IO)::Bool
 Are we rendering inside a Pluto notebook?
 
 This function should be used inside a `Base.show` method, and the first argument should be the `io` provided to the `Base.show` method.
+
+# Example
+```julia
+function Base.show(io::IO, m::MIME"text/html", d::MyCoolWidget)
+    if is_inside_pluto(io)
+        Base.show(io, m, @htl("..."))
+    else
+        # do something else
+    end
+end
+```
 """
 is_inside_pluto(io::IO)::Bool =
     if !_loaded_ref[]
