@@ -302,6 +302,77 @@ end
 """
 validate_value(bond::Any, input::Any) = false
 
+"""
+```julia
+Bonds.incorporate_last_bond(
+	just_created::T, 
+	previous::T, 
+	previous_value_from_js::Any
+)::T
+```
+
+Write an overload for this method if you would like your bond to be able to **persist state** after redefinitions. Before discussing implementation, let's look at an example:
+
+# Example: *Stateful slider*
+
+In this example, we have a simple `MySlider` type, with the following definition:
+
+```julia
+import HypertextLiteral: @htl
+import AbstractPlutoDingetjes.Bonds
+
+struct MySlider
+    values::AbstractRange
+    default::Real
+end
+
+Base.show(io::IO, m::MIME"text/html", s::MySlider) = 
+    show(io, m, @htl(
+        ""\"<input 
+            type=range 
+            value=\$(s.default) 
+            min=\$(minimum(s.values)) step=\$(step(s.values)) max=\$(maximum(s.values))
+        >""\"
+    ))
+
+Bonds.initial_value(s::MySlider) = minimum(s.values)
+```
+
+## Dependent definition
+
+Let's say that we are using our `MySlider` like so:
+
+```julia
+upper = 10
+```
+```julia
+@bind x MySlider(1:upper, 1)
+```
+
+Initially, we have `x == 1`. Now, we move the slider to `5`, and we have `x == 5`.
+
+If we now change `upper` to `20`, this will re-run the second cell, *generating a new slider*. This new slider has initial value `1`, so we are setting `x` to `1`, and we **lose the previous value** (`5`).
+
+## Introducing state
+
+Normally, this is fine (and intentional), but if we want to persist the previous value, we can do so by writing an overload for `incorporate_last_bond`:
+
+```julia
+function Bonds.incorporate_last_bond(new::MySlider, old::MySlider, old_from_js::Any)
+    if old_from_js ∈ new.values
+        MySlider(new.values, old_from_js)
+    else
+        new
+    end
+end
+```
+"""
+incorporate_last_bond(
+    just_created,
+    previous,
+    previous_value_from_js::Any
+) = just_created
+
 
 end
 
