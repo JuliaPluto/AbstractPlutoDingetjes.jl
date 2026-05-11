@@ -1,8 +1,33 @@
 
 """
-An abstract package to be implemented by packages/people who create widgets/*dingetjes* for Pluto. If you are just happy using Pluto to make cool stuff, you probably don't want to use this package directly.
+A more technical package meant for people who develop widgets for other Pluto users. By using and implementing methods from this package, you can give your widget more advanced features.
 
-Take a look at [`AbstractPlutoDingetjes.Bonds`](@ref).
+This package is very small, and contains no functional code (all functionality is implemented by Pluto). This means that you can add AbstractPlutoDingetjes.jl as a dependency to your package with almost no overhead!
+
+## Common use
+Most functions in AbstractPlutoDingetjes are most useful when used with the `type`–`show`–`@htl` recipe. A basic example:
+
+```julia
+import HypertextLiteral: @htl
+
+struct MyCoolSlider
+    min::Real
+    max::Real
+end
+
+function Base.show(io::IO, m::MIME"text/html", d::MyCoolSlider)
+    show(io, m, @htl(
+        ""\"
+        <input type=range min=\$(d.min) max=\$(d.max)>
+        ""\"
+    ))
+end
+
+# Use:
+@bind value MyCoolSlider(5, 10)
+```
+
+This example **does not use** AbstractPlutoDingetjes, but AbstractPlutoDingetjes can be used to gradually enhance this widget.
 """
 module AbstractPlutoDingetjes
 
@@ -10,12 +35,7 @@ export Bonds, is_inside_pluto, is_supported_by_display
 
 
 include_dependency("../Project.toml")
-
-import Pkg
-project_relative_path(xs...) = normpath(joinpath(dirname(dirname(pathof(@__MODULE__))), xs...))
-p = Pkg.TOML.parsefile(project_relative_path("Project.toml"))
-
-const MY_VERSION = VersionNumber(p["version"])
+const MY_VERSION = pkgversion(@__MODULE__)
 
 
 const _loaded_ref = Ref(false)
@@ -85,6 +105,17 @@ is_inside_pluto(io::IO)::Bool
 Are we rendering inside a Pluto notebook?
 
 This function should be used inside a `Base.show` method, and the first argument should be the `io` provided to the `Base.show` method.
+
+# Example
+```julia
+function Base.show(io::IO, m::MIME"text/html", d::MyCoolWidget)
+    if is_inside_pluto(io)
+        Base.show(io, m, @htl("..."))
+    else
+        # do something else
+    end
+end
+```
 """
 is_inside_pluto(io::IO)::Bool =
     if !_loaded_ref[]
@@ -94,182 +125,7 @@ is_inside_pluto(io::IO)::Bool =
     end
 
 
-module Bonds
-import ..AbstractPlutoDingetjes
-
-export initial_value, transform_value, possible_values, validate_value
-export NotGiven, InfinitePossibilities
-
-"""
-The initial value of a bond. In a notebook containing `@bind x my_widget`, this will be used in two cases:
-1. The value of `x` will be set to `x = AbstractPlutoDingetjes.Bonds.initial_value(my_widget)` during the `@bind` call. This initial value will be used in cells that use `x`, until the widget is rendered in the browser and the first value is received.
-2. When running a notebook file without Pluto, e.g. `shell> julia my_notebook.jl`, this value will be used for `x`.
-
-When not overloaded for your widget, it defaults to returning `missing`.
-
-# Example
-```julia
-struct MySlider
-    range::AbstractRange{<:Real}
-end
-
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
-
-AbstractPlutoDingetjes.Bonds.initial_value(s::MySlider) = first(s.range)
-
-# Add the following for the same functionality on Pluto versions 0.17.0 and below. Will be ignored in future Pluto versions. See the compat info below.
-Base.get(s::MySlider) = first(s.range)
-
-```
-
-!!! info "Note about `transform_value`"
-    If you are also using [`transform_value`](@ref) for your widget, then the value returned by `initial_value` should be the value **after** transformation.
-
-
-!!! compat "Pluto 0.17.1"
-    This feature only works in Pluto version 0.17.1 or above.
-
-    Older versions of Pluto used a `Base.get` overload for this (to avoid the need for the `AbstractPlutoDingetjes` package, but we changed our minds 💕). To support all versions of Pluto, use both methods of declaring the initial value.
-
-    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
-
-"""
-initial_value(bond::Any) = missing
-
-
-
-
-"""
-Transform a value received from the browser before assigning it to the bound julia variable. In a notebook containing `@bind x my_widget`, Pluto will run `x = AbstractPlutoDingetjes.Bonds.transform_value(my_widget, \$value_from_javascript)`. Without this hook, widgets in JavaScript can only return simple types (numbers, dictionaries, vectors) into bound variables.
-
-When not overloaded for your widget, it defaults to returning the value unchanged, i.e. `x = \$value_from_javascript`.
-
-# Example
-```julia
-struct MyVectorSlider
-    values::Vector{<:Any} # note! a vector of arbitrary objects, not just numbers
-end
-
-Base.show(io::IO, m::MIME"text/html", s::MyVectorSlider) = show(io, m, HTML("<input type=range min=1 max=\$(length(s.values))>"))
-
-AbstractPlutoDingetjes.Bonds.transform_value(s::MySlider, value_from_javascript::Int) = s.values[value_from_javascript]
-```
-
-!!! compat "Pluto 0.17.1"
-    This feature only works in Pluto version 0.17.1 or above. Values are not transformed in older versions.
-
-    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
-
-"""
-transform_value(bond::Any, value_from_javascript::Any) = value_from_javascript
-
-
-
-
-"`NotGiven()` is the default return value of `possible_values(::Any)`."
-struct NotGiven end
-"Return `InfinitePossibilities()` from your overload of [`possible_values`](@ref) to signify that your bond has no finite set of possible values."
-struct InfinitePossibilities end
-
-
-"""
-The possible values of a bond. This is used when generating precomputed PlutoSliderServer states, see [https://github.com/JuliaPluto/PlutoSliderServer.jl/pull/29](https://github.com/JuliaPluto/PlutoSliderServer.jl/pull/29). Not relevant outside of this use (for now...).
-
-The returned value should be an iterable object that you can call `length` on (like a `Vector` or a `Generator` without filter) or return [`InfinitePossibilities()`](@ref) if this set is inifinite.
-
-# Examples
-```julia
-struct MySlider
-    range::AbstractRange{<:Real}
-end
-
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
-
-AbstractPlutoDingetjes.Bonds.possible_values(s::MySlider) = s.range
-```
-
-```julia
-struct MyTextBox end
-
-Base.show(io::IO, m::MIME"text/html", s::MyTextBox) = show(io, m, HTML("<input type=text>"))
-
-AbstractPlutoDingetjes.Bonds.possible_values(s::MySlider) = AbstractPlutoDingetjes.Bonds.InfinitePossibilities()
-```
-
-!!! info "Note about `transform_value`"
-    If you are also using [`transform_value`](@ref) for your widget, then the values returned by `possible_values` should be the values **before** transformation.
-
-!!! compat "Pluto 0.17.3"
-    This feature only works in Pluto version 0.17.3 or above.
-
-"""
-possible_values(bond::Any) = NotGiven()
-
-
-"""
-Validate a value received from the browser before "doing the pluto thing". In a notebook containing `@bind x my_widget`, Pluto will run `AbstractPlutoDingetjes.Bonds.validate_value(my_widget, \$value_from_javascript)`. If the result is `false`, then the value from JavaScript is considered "invalid" or "insecure", and no further code will be executed.
-
-This is a protection measure when using your widget on a public PlutoSliderServer, where people could write fake requests that set bonds to arbitrary values.
-
-The returned value should be a `Boolean`.
-
-# Example
-```julia
-struct MySlider
-    range::AbstractRange{<:Real}
-end
-
-Base.show(io::IO, m::MIME"text/html", s::MySlider) = show(io, m, HTML("<input type=range min=\$(first(s.values)) step=\$(step(s.values)) max=\$(last(s.values))>"))
-
-AbstractPlutoDingetjes.Bonds.validate_value(s::MySlider, from_browser::Real) = first(s.range) <= from_browser <= last(s.range)
-```
-
-!!! info "Note about `transform_value`"
-    If you are also using [`transform_value`](@ref) for your widget, then the value validated by `validate_value` will be the value **before** transformation.
-
-!!! info
-    The fallback method is `validate_value(::Any, ::Any) = false`. In the example above, this means that if the value is not a `Real`, it is automatically considered invalid.
-
-!!! compat "Pluto TODO"
-    This feature only works in Pluto version TODO: NOT RELEASED YET or above.
-
-"""
-validate_value(bond::Any, input::Any) = false
-
-
-end
-
-
-###########################
-
-
-
-
-module Display
-import ..AbstractPlutoDingetjes
-
-
-
-struct _AutoIDGiver
-    source::LineNumberNode
-end
-function Base.show(io::IO, g::_AutoIDGiver)
-    auto_id! = get(io, :pluto_auto_id!, _fallback_auto_id!)
-
-    name = "id_$(
-        string(hash(g.source), base=62)
-    )_$(
-        auto_id!(io)
-    )"
-
-    write(io, name)
-end
-_fallback_auto_id!(::IO) = string(rand(Int))
-
-macro auto_id()
-    _AutoIDGiver(__source__)
-end
-
-end
+include("Bonds.jl")
+include("Display.jl")
 
 end
