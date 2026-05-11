@@ -401,6 +401,11 @@ end
 ```
 
 Assinging an `id` to the `<script>` element enables a couple of cool JS API features. Most important is [`this` for stateful output](https://plutojl.org/en/docs/javascript-api/#this), and for re-rendering the value previously [`return`ed from JS](https://plutojl.org/en/docs/javascript-api/#return).
+
+!!! compat "Pluto 0.20.26"
+    This feature only works in Pluto version 0.20.26 (May 2026) or above. When unsupported, it falls back to a random string generated at render time.
+
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 """
 macro auto_id()
     _AutoIDGiver(__source__)
