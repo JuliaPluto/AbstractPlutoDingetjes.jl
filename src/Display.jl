@@ -413,4 +413,67 @@ end
 
 
 
+struct _EmbedDisplay
+    x
+    source::LineNumberNode
+end
+function Base.show(io::IO, m::MIME"text/html", e::_EmbedDisplay)
+    core = get(io, :pluto_embed_display, nothing)
+    if core === nothing
+        show(io, m, e.x)
+    else
+        show(io, m, core(io, e.x, _AutoIDGiver(e.source)))
+    end
+end
+
+
+"""
+```julia
+@embed(x)
+```
+
+Wrap `x` so it renders using Pluto's interactive multimedia viewer (images, arrays, tables, etc.) when interpolated into HTML output. You can interpolate the result into HTML content (we recommend [HypertextLiteral.jl](https://github.com/MechanicalRabbit/HypertextLiteral.jl) or [HyperScript.jl](https://github.com/yurivish/Hyperscript.jl)), Markdown, PlutoUI layout elements, and more.
+
+# Example
+
+Markdown can interpolate HTML-showable objects, including the embedded display:
+
+```julia
+md"\""
+# Cool data
+
+\$(embed_display(rand(10)))
+
+Wow!
+"\""
+```
+
+You can use HTML templating packages to create cool layouts, like two arrays side-by-side:
+
+```julia
+using HypertextLiteral
+```
+
+```julia
+@htl("\""
+
+<div style="display: flex;">
+\$(embed_display(rand(4)))
+\$(embed_display(rand(4)))
+</div>
+
+"\"")
+```
+
+!!! compat "Pluto 0.20.26"
+    This feature only works in Pluto version 0.20.26 or above. When unsupported, it falls back to rendering `x` directly.
+
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
+"""
+macro embed(x)
+    :( $(_EmbedDisplay)($(esc(x)), $(QuoteNode(__source__))) )
+end
+
+
+
 end
