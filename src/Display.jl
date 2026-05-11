@@ -375,7 +375,7 @@ function Base.show(io::IO, g::_AutoIDGiver)
 
     write(io, name)
 end
-_fallback_auto_id!(::IO) = string(rand(Int))
+_fallback_auto_id!(::IO) = string("PlutoRunner-auto-id-fallback", rand(Int64))
 
 """
 ```julia
@@ -391,11 +391,12 @@ struct MyWidget
 end
 
 function Base.show(io::IO, m::MIME"text/html", w::MyWidget)
-    @htl("\""
+    h = @htl("\""
     <script id=\$(@auto_id())>
         // Some code
     </script>
     "\"")
+    show(io, m, h)
 end
 ```
 
