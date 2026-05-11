@@ -362,13 +362,13 @@ with_js_link(f::Function, on_cancellation=nothing) = _JSLink(f, on_cancellation)
 
 
 struct _AutoIDGiver
-    source::LineNumberNode
+    source_hash::UInt64
 end
 function Base.show(io::IO, g::_AutoIDGiver)
     auto_id! = get(io, :pluto_auto_id!, _fallback_auto_id!)
 
     name = "id_$(
-        string(hash(g.source), base=62)
+        string(g.source_hash, base=62))
     )_$(
         auto_id!(io)
     )"
@@ -408,21 +408,21 @@ Assinging an `id` to the `<script>` element enables a couple of cool JS API feat
     Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 """
 macro auto_id()
-    _AutoIDGiver(__source__)
+    _AutoIDGiver(hash(__source__))
 end
 
 
 
 struct _EmbedDisplay
     x
-    source::LineNumberNode
+    source_hash::UInt64
 end
 function Base.show(io::IO, m::MIME"text/html", e::_EmbedDisplay)
     core = get(io, :pluto_embed_display, nothing)
     if core === nothing
         show(io, m, e.x)
     else
-        show(io, m, core(io, e.x, _AutoIDGiver(e.source)))
+        show(io, m, core(io, e.x, _AutoIDGiver(e.source_hash)))
     end
 end
 
@@ -471,7 +471,7 @@ using HypertextLiteral
     Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 """
 macro embed(x)
-    :( $(_EmbedDisplay)($(esc(x)), $(QuoteNode(__source__))) )
+    :( $(_EmbedDisplay)($(esc(x)), $(hash(__source__))) )
 end
 
 
