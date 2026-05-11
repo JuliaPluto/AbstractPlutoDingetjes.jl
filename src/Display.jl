@@ -1,7 +1,7 @@
 
 module Display
 import ..AbstractPlutoDingetjes
-export published_to_js
+export published_to_js, ReactDOMElement
 
 
 struct _PublishToJS
@@ -475,5 +475,21 @@ macro embed(x)
 end
 
 
+
+Base.@kwdef struct ReactDOMElement
+    tag::String = "div"
+    attributes::AbstractDict = Dict{String,Any}()
+    children::AbstractVector = Any[]
+end
+
+function Base.show(io::IO, ::MIME"application/vnd.pluto.reactdomelement+object", e::ReactDOMElement)
+    return e
+end
+
+function Base.show(io::IO, m::MIME"text/html", e::ReactDOMElement)
+    if get(io, :pluto_embed_display, nothing) !== nothing
+        Base.show(io, m, _EmbedDisplay(e, rand(UInt64)))
+    end
+end
 
 end
