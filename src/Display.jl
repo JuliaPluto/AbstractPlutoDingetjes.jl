@@ -377,6 +377,30 @@ function Base.show(io::IO, g::_AutoIDGiver)
 end
 _fallback_auto_id!(::IO) = string(rand(Int))
 
+"""
+```julia
+@auto_id()::String
+```
+
+Generate an automatic unique ID that is stable across reactive re-evaluations, but different for different source code locations, repeated/nested use, and different non-reactive runs. This is useful for generating HTML element IDs in a `Base.show` method, without the risk of ID collisions.
+
+# Example
+```julia
+struct MyWidget
+    # ...
+end
+
+function Base.show(io::IO, m::MIME"text/html", w::MyWidget)
+    @htl("\""
+    <script id=\$(@auto_id())>
+        // Some code
+    </script>
+    "\"")
+end
+```
+
+Assinging an `id` to the `<script>` element enables a couple of cool JS API features. Most important is [`this` for stateful output](https://plutojl.org/en/docs/javascript-api/#this), and for re-rendering the value previously [`return`ed from JS](https://plutojl.org/en/docs/javascript-api/#return).
+"""
 macro auto_id()
     _AutoIDGiver(__source__)
 end
