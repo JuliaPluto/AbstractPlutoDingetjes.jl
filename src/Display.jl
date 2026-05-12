@@ -368,7 +368,7 @@ function Base.show(io::IO, g::_AutoIDGiver)
     auto_id! = get(io, :pluto_auto_id!, _fallback_auto_id!)
 
     name = "id_$(
-        string(g.source_hash, base=62))
+        string(g.source_hash, base=62)
     )_$(
         auto_id!(io)
     )"
