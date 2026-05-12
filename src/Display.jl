@@ -526,7 +526,7 @@ function Base.show(io::IO, ::MIME"application/vnd.pluto.reactdomelement+object",
             ReactDOMElement(;
                 tag = "li",
                 attributes = Dict("key" => item),
-                children = [item],
+                children = [HTML(item)],
             )
             for item in s.items
         ],
@@ -588,9 +588,9 @@ ReactDOMElement(;
 ```
 
 !!! compat "Pluto 0.20.26"
-    This feature only works in Pluto versions that support it. When unsupported, a `text/html` fallback is used.
+    This feature only works in Pluto versions that support it.
 
-    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget. Support for `ReactDOMElement` means that the MIME type is also supported.
 """
 Base.@kwdef struct ReactDOMElement
     tag::String = "div"
@@ -611,21 +611,9 @@ function Base.show(io::IO, m::MIME"text/html", e::ReactDOMElement)
     if get(io, :pluto_embed_display, nothing) !== nothing
         Base.show(io, m, _EmbedDisplay(e, rand(UInt64)))
     else
-        # Outside Pluto: render as plain HTML.
-        print(io, "<", e.tag)
-        for (k, v) in e.attributes
-            k == "key" && continue
-            print(io, " ", k, "=\"")
-            print(io, replace(string(v), "&" => "&amp;", "\"" => "&quot;", "<" => "&lt;"))
-            print(io, "\"")
-        end
-        print(io, ">")
-        for c in e.children
-            show(io, m, c)
-        end
-        print(io, "</", e.tag, ">")
+        @warn "AbstractPlutoDingetjes.Display.ReactDOMElement cannot be displayed here. This object needs to be displayed directly by Pluto, and not rendered to a String."
+        println(io, "<em>ReactDOMElement cannot be displayed here.</em>")
     end
 end
-
 
 end

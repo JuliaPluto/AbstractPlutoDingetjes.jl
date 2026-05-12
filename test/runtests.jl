@@ -43,5 +43,11 @@ using AbstractPlutoDingetjes: Bonds, Display
         @test sprint(show, MIME"text/html"(), embedded) isa String
     end
 
-    include("test_reactdomelement.jl")
+    @testset "ReactDOMElement sanity" begin
+        @test Display.ReactDOMElement() isa Display.ReactDOMElement
+        e = Display.ReactDOMElement(; tag="span", attributes=Dict("id" => "x"), children=Any[HTML("hi")])
+        @test e.tag == "span"
+        @test e.attributes["id"] == "x"
+        @test length(e.children) == 1
+    end
 end
