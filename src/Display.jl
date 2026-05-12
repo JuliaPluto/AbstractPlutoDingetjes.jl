@@ -541,7 +541,7 @@ ShoppingList(["Milk", "Eggs", "Bread"])
     `application/vnd.pluto.reactdomelement+object` MIME type does **not** write
     anything to `io`. Instead, it **returns** a `ReactDOMElement` (or any object
     that has a show method for this MIME). Pluto's renderer takes the returned
-    value and serializes it to the frontend.
+    value and serializes it to the frontend. Thank you [Shashi Gowda](github.com/shashi) for the idea!
 
     ```julia
     # ✅ Correct: return the element
