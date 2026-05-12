@@ -41,11 +41,9 @@ using AbstractPlutoDingetjes: Bonds, Display
         # @embed falls back to plain show of the wrapped value outside Pluto.
         embedded = @eval Display.@embed HTML("hello")
         @test sprint(show, MIME"text/html"(), embedded) isa String
-    end
-
-    @testset "ReactDOMElement sanity" begin
+        
         @test Display.ReactDOMElement() isa Display.ReactDOMElement
-        e = Display.ReactDOMElement(; tag="span", attributes=Dict("id" => "x"), children=Any[HTML("hi")])
+        e = Display.ReactDOMElement(; tag="span", attributes=Dict("id" => "x", :a => 123), children=Any[HTML("hi")])
         @test e.tag == "span"
         @test e.attributes["id"] == "x"
         @test length(e.children) == 1
