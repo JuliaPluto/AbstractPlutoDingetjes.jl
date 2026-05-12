@@ -476,20 +476,81 @@ end
 
 
 
+"""
+```julia
+ReactDOMElement(; tag="div", attributes=Dict(), children=[])
+```
+
+A lightweight Preact/React-like virtual DOM element that Pluto's frontend renders directly as a DOM node.
+
+You can either return a `ReactDOMElement` directly from a cell, or implement
+`Base.show(::IO, ::MIME"application/vnd.pluto.reactdomelement+object", x::MyType)` for your own type
+to return a `ReactDOMElement`. **Do not write to `io`** — just return the element.
+
+# Fields
+- `tag::String` — HTML/SVG tag name (`"div"`, `"span"`, `"svg"`, ...).
+- `attributes::AbstractDict` — splatted onto the element. Use `"class"`, `"style"`, `"id"`, `"data-*"`, etc. The special `"key"` attribute is used as Preact's reconciliation key.
+- `children::AbstractVector` — child displayables. Each child is rendered through Pluto's normal display pipeline, so HTML strings, images, tables, other `ReactDOMElement`s etc. all work.
+
+# Example
+```julia
+struct MyType end
+
+function Base.show(io::IO, ::MIME"application/vnd.pluto.reactdomelement+object", ::MyType)
+    AbstractPlutoDingetjes.Display.ReactDOMElement(;
+        tag = "div",
+        attributes = Dict(
+            "style" => "display: flex; width: 100px; height: 100px; background-color: red;",
+            "class" => "awesome",
+            "id" => "something",
+            "data-xoxox" => "yeS",
+        ),
+        children = [
+            HTML("<p>Hello from MyType!</p>"),
+        ],
+    )
+end
+```
+
+!!! compat "Pluto 0.21"
+    This feature only works in Pluto versions that support it. When unsupported, the `text/html` fallback is used.
+
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
+"""
 Base.@kwdef struct ReactDOMElement
     tag::String = "div"
     attributes::AbstractDict = Dict{String,Any}()
     children::AbstractVector = Any[]
 end
 
+# Inside Pluto, the cell-output show method returns the element itself — PlutoRunner picks it up
+# via the MIME type and serializes the struct to the frontend.
 function Base.show(io::IO, ::MIME"application/vnd.pluto.reactdomelement+object", e::ReactDOMElement)
     return e
 end
 
+# text/html fallback: relay through `_EmbedDisplay`, which inside Pluto dispatches to the
+# multimedia viewer (and therefore the reactdomelement+object MIME above), and outside
+# Pluto falls back to `show(io, MIME"text/html"(), e.x)` — handled below.
 function Base.show(io::IO, m::MIME"text/html", e::ReactDOMElement)
     if get(io, :pluto_embed_display, nothing) !== nothing
         Base.show(io, m, _EmbedDisplay(e, rand(UInt64)))
+    else
+        # Outside Pluto: render as plain HTML.
+        print(io, "<", e.tag)
+        for (k, v) in e.attributes
+            k == "key" && continue
+            print(io, " ", k, "=\"")
+            print(io, replace(string(v), "&" => "&amp;", "\"" => "&quot;", "<" => "&lt;"))
+            print(io, "\"")
+        end
+        print(io, ">")
+        for c in e.children
+            show(io, m, c)
+        end
+        print(io, "</", e.tag, ">")
     end
 end
+
 
 end
