@@ -1,7 +1,7 @@
 
 module Display
 import ..AbstractPlutoDingetjes
-export published_to_js
+export published_to_js, ReactDOMElement
 
 
 struct _PublishToJS
@@ -475,5 +475,145 @@ macro embed(x)
 end
 
 
+
+"""
+
+```julia
+ReactDOMElement(; tag="div", attributes=Dict(), children=[])
+```
+
+A lightweight Preact/React-like virtual DOM element that Pluto's frontend renders directly as a DOM node, without going through HTML strings.
+
+# Fields
+- `tag::String` — HTML/SVG tag name (`"div"`, `"span"`, `"svg"`, ...).
+- `attributes::AbstractDict` — applied to the element. Use `"class"`, `"style"`, `"id"`, `"data-*"`, etc. See the notes on [`style`](@ref ReactDOMElement) and [`key`](@ref ReactDOMElement) below.
+- `children::AbstractVector` — child displayables. Each child is rendered through Pluto's normal display pipeline, so other `ReactDOMElement`s, HTML strings, images, tables, etc. all work, and you can freely nest.
+
+# Two ways to use it
+
+## 1. Return a `ReactDOMElement` directly from a cell
+
+```julia
+using AbstractPlutoDingetjes.Display: ReactDOMElement
+
+ReactDOMElement(;
+    tag = "ul",
+    children = [
+        ReactDOMElement(; tag = "li", children = ["Milk"]),
+        ReactDOMElement(; tag = "li", children = ["Eggs"]),
+        ReactDOMElement(; tag = "li", children = ["Bread"]),
+    ],
+)
+```
+
+## 2. Write a show method for your own type
+
+Implement `Base.show` for the MIME type `"application/vnd.pluto.reactdomelement+object"` and **return** a `ReactDOMElement`:
+
+```julia
+using AbstractPlutoDingetjes.Display: ReactDOMElement
+
+struct ShoppingList
+    items::Vector{String}
+end
+
+function Base.show(io::IO, ::MIME"application/vnd.pluto.reactdomelement+object", s::ShoppingList)
+    # ℹ️ Note: We return a ReactDOMElement, we do not write to `io`.
+    return ReactDOMElement(;
+        tag = "ul",
+        attributes = Dict("class" => "shopping-list"),
+        children = [
+            ReactDOMElement(;
+                tag = "li",
+                attributes = Dict("key" => item),
+                children = [HTML(item)],
+            )
+            for item in s.items
+        ],
+    )
+end
+
+ShoppingList(["Milk", "Eggs", "Bread"])
+```
+
+!!! warning "The show method returns — it does **not** write to `io`!"
+    Unlike a normal `Base.show` method, the show method for the
+    `application/vnd.pluto.reactdomelement+object` MIME type does **not** write
+    anything to `io`. Instead, it **returns** a `ReactDOMElement` (or any object
+    that has a show method for this MIME). Pluto's renderer takes the returned
+    value and serializes it to the frontend. Thank you [Shashi Gowda](github.com/shashi) for the idea!
+
+    ```julia
+    # ✅ Correct: return the element
+    function Base.show(io::IO, ::MIME"application/vnd.pluto.reactdomelement+object", x::MyType)
+        return ReactDOMElement(; tag = "div", children = ["hi"])
+    end
+
+    # 🛑 Wrong: do not write to io
+    function Base.show(io::IO, ::MIME"application/vnd.pluto.reactdomelement+object", x::MyType)
+        print(io, "...")  # don't do this
+    end
+    ```
+
+# Styling: the `style` attribute
+
+Set inline CSS via the `"style"` attribute, as a single CSS string:
+
+```julia
+ReactDOMElement(;
+    tag = "div",
+    attributes = Dict(
+        "style" => "display: flex; gap: .5em; padding: 1em; background: #fee;",
+    ),
+    children = ["Hello!"],
+)
+```
+
+# The `key` attribute
+
+The special `"key"` attribute is forwarded to Preact as the [reconciliation key](https://preactjs.com/tutorial/08-keys/). When you render a list of children that may be reordered, inserted, or removed across re-renders, giving each child a stable, unique `"key"` lets Preact match up the old and new children correctly — preserving DOM state (focus, input values, animations) instead of recreating nodes.
+
+```julia
+ReactDOMElement(;
+    tag = "ul",
+    children = [
+        ReactDOMElement(;
+            tag = "li",
+            attributes = Dict("key" => item.id),
+            children = [item.name],
+        )
+        for item in items
+    ],
+)
+```
+
+!!! compat "Pluto 0.20.26"
+    This feature only works in Pluto versions that support it.
+
+    Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget. Support for `ReactDOMElement` means that the MIME type is also supported.
+"""
+Base.@kwdef struct ReactDOMElement
+    tag::String = "div"
+    attributes::AbstractDict = Dict{String,Any}()
+    children::AbstractVector = Any[]
+end
+
+# Inside Pluto, the cell-output show method returns the element itself — PlutoRunner picks it up
+# via the MIME type and serializes the struct to the frontend.
+function Base.show(io::IO, ::MIME"application/vnd.pluto.reactdomelement+object", e::ReactDOMElement)
+    return e
+end
+
+# text/html fallback: relay through `_EmbedDisplay`, which inside Pluto dispatches to the
+# multimedia viewer (and therefore the reactdomelement+object MIME above), and outside
+# Pluto falls back to `show(io, MIME"text/html"(), e.x)` — handled below.
+function Base.show(io::IO, m::MIME"text/html", e::ReactDOMElement)
+    if get(io, :pluto_embed_display, nothing) !== nothing
+        Base.show(io, m, _EmbedDisplay(e, rand(UInt64)))
+    else
+        @warn "AbstractPlutoDingetjes.Display.ReactDOMElement cannot be displayed here. This object needs to be displayed directly by Pluto, and not rendered to a String."
+        println(io, "<em>ReactDOMElement cannot be displayed here.</em>")
+    end
+end
 
 end
