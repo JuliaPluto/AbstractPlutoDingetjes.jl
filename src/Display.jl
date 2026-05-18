@@ -466,7 +466,7 @@ using HypertextLiteral
 ```
 
 !!! compat "Pluto 0.20.26"
-    This feature only works in Pluto version 0.20.26 or above. When unsupported, it falls back to rendering `x` directly.
+    This feature only works in Pluto version 0.20.26 or above. When unsupported, it falls back to rendering `x` directly, using the `text/html` MIME type.
 
     Use [`AbstractPlutoDingetjes.is_supported_by_display`](@ref) if you want to check support inside your widget.
 """
