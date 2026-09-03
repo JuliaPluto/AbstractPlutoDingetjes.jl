@@ -442,7 +442,7 @@ Markdown can interpolate HTML-showable objects, including the embedded display:
 md"\""
 # Cool data
 
-\$(embed_display(rand(10)))
+\$(@embed(rand(10)))
 
 Wow!
 "\""
@@ -458,8 +458,8 @@ using HypertextLiteral
 @htl("\""
 
 <div style="display: flex;">
-\$(embed_display(rand(4)))
-\$(embed_display(rand(4)))
+\$(@embed(rand(4)))
+\$(@embed(rand(4)))
 </div>
 
 "\"")
@@ -611,7 +611,7 @@ function Base.show(io::IO, m::MIME"text/html", e::ReactDOMElement)
     if get(io, :pluto_embed_display, nothing) !== nothing
         Base.show(io, m, _EmbedDisplay(e, rand(UInt64)))
     else
-        @warn "AbstractPlutoDingetjes.Display.ReactDOMElement cannot be displayed here. This object needs to be displayed directly by Pluto, and not rendered to a String."
+        @warn "AbstractPlutoDingetjes.Display.ReactDOMElement cannot be displayed here. This object needs to be displayed directly by Pluto, and not rendered to a String.\n\nTip: Update Pluto and the packages in this notebook."
         println(io, "<em>ReactDOMElement cannot be displayed here.</em>")
     end
 end
